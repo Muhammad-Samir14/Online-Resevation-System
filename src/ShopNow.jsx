@@ -1,50 +1,60 @@
-import { Link } from 'react-router-dom';
-import 'bootstrap/dist/css/bootstrap.min.css';
+import { Link } from "react-router-dom";
+import "bootstrap/dist/css/bootstrap.min.css";
 
 function ShopNow() {
+  // 🧩 Step 1 — Your original card data, kept same as before
+  const shopOptions = [
+    {
+      icon: "bi bi-shop",
+      title: "MARWAT LPG Shop",
+      desc: "Visit our LPG shop for high-quality cylinders.",
+      btnText: "Shop Now",
+      btnColor: "btn btn-outline-success",
+      iconColor: "text-success",
+      bgColor: "bg-warning-subtle",
+    },
+    {
+      icon: "bi bi-droplet-fill",
+      title: "LPG Refill",
+      desc: "Get your LPG cylinder refilled quickly and safely.",
+      btnText: "Refill Now",
+      btnColor: "btn btn-outline-danger",
+      iconColor: "text-danger",
+    },
+    {
+      icon: "bi bi-truck",
+      title: "Bulk Deliveries",
+      desc: "Order large quantities for commercial or industrial needs.",
+      btnText: "Order Bulk",
+      btnColor: "btn btn-outline-warning",
+      iconColor: "text-warning",
+    },
+  ];
+
+  // 🧩 Step 2 — Use map() to generate the cards dynamically
   return (
-    <section className="py-5 bg-warning" style={{ backgroundColor: "#f8f9fa" }}>
+    <section className="py-5 bg-warning">
       <div className="container text-center">
-        <div className="mb-5">
-          <h2 className="fw-bold text-primary">
-            <i className="bi bi-bag-fill me-2 text-warning"></i>
-            Shop Now
-          </h2>
-          <p className="text-muted">
-            Choose from our range of LPG services for your convenience
-          </p>
-        </div>
+        <h2 className="fw-bold mb-4">
+          <i className="bi bi-bag-check-fill text-secondary me-2"></i>
+          Shop Now
+        </h2>
 
         <div className="row g-4">
-          {/* LPG Shop */}
-          <div className="col-md-4">
-            <div className="p-4 bg-white rounded shadow-sm h-100">
-              <i className="bi bi-shop fs-1 text-success mb-3"></i>
-              <h5 className="fw-semibold">MARWAT LPG Shop</h5>
-              <p className="text-muted">Visit our LPG shop for high-quality cylinders.</p>
-              <Link to="/shop" className="btn btn-outline-primary px-4 mt-2">Shop Now</Link>
+          {shopOptions.map((item, index) => (
+            <div key={index} className="col-md-4 col-sm-6">
+              <div className="card border-0 shadow-sm p-4 h-100">
+                <div className="card-body">
+                  <i className={`${item.icon} fs-1 ${item.iconColor} mb-3`}></i>
+                  <h5 className="card-title fw-semibold">{item.title}</h5>
+                  <p className="card-text text-muted">{item.desc}</p>
+                  <Link to="/shop" className={`${item.btnColor} px-4 mt-2`}>
+                    {item.btnText}
+                  </Link>
+                </div>
+              </div>
             </div>
-          </div>
-
-          {/* LPG Refill */}
-          <div className="col-md-4">
-            <div className="p-4 bg-white rounded shadow-sm h-100">
-              <i className="bi bi-droplet-fill fs-1 text-info mb-3"></i>
-              <h5 className="fw-semibold">LPG Refill</h5>
-              <p className="text-muted">Get your LPG cylinder refilled quickly and safely.</p>
-              <Link to="/shop" className="btn btn-outline-info px-4 mt-2">Refill Now</Link>
-            </div>
-          </div>
-
-          {/* Bulk Deliveries */}
-          <div className="col-md-4">
-            <div className="p-4 bg-white rounded shadow-sm h-100">
-              <i className="bi bi-truck fs-1 text-warning mb-3"></i>
-              <h5 className="fw-semibold">Bulk Deliveries</h5>
-              <p className="text-muted">Order large quantities for commercial or industrial needs.</p>
-              <Link to="/shop" className="btn btn-outline-warning px-4 mt-2">Order Bulk</Link>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
     </section>

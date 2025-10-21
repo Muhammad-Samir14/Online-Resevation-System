@@ -1,8 +1,52 @@
 import React, { useState } from "react";
 
-function RegisterandLoginPage() {
+function RegisterandLoginPage({ showOnlyBookGas }) {
   const [activeTab, setActiveTab] = useState("login");
 
+  // ✅ If the user comes from ShopPage with "Book Gas" request
+  if (showOnlyBookGas) {
+    return (
+      <div className="container mt-5" style={{ maxWidth: "700px" }}>
+        <div className="card shadow-lg border-0 rounded-4">
+          <div className="card-header bg-success text-white text-center rounded-top-4">
+            <h4 className="mb-0">Book Gas</h4>
+          </div>
+          <div className="card-body p-4">
+            <form>
+              <div className="mb-3">
+                <label className="form-label">Full Name</label>
+                <input type="text" className="form-control" placeholder="Enter your name" />
+              </div>
+
+              <div className="mb-3">
+                <label className="form-label">Delivery Address</label>
+                <input type="text" className="form-control" placeholder="Enter your address" />
+              </div>
+
+              <div className="mb-3">
+                <label className="form-label">
+                <i className="bi bi-telephone-fill me-2"></i> Contact Number
+                </label>
+
+                <input type="text" className="form-control" placeholder="03XXXXXXXXX" />
+              </div>
+
+              <div className="mb-3">
+                <label className="form-label">Preferred Delivery Time</label>
+                <input type="text" className="form-control" placeholder="e.g. 2:00 PM - 4:00 PM" />
+              </div>
+
+              <button type="button" className="btn btn-success w-100">
+                Submit Booking
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ✅ Default login/register page
   return (
     <div className="container mt-5" style={{ maxWidth: "700px" }}>
       <div className="card shadow-lg border-0 rounded-4">
@@ -25,14 +69,6 @@ function RegisterandLoginPage() {
                 Register
               </button>
             </li>
-            <li className="nav-item">
-              <button
-                className={`nav-link ${activeTab === "book" ? "active" : ""}`}
-                onClick={() => setActiveTab("book")}
-              >
-                Book Gas
-              </button>
-            </li>
           </ul>
         </div>
 
@@ -43,11 +79,17 @@ function RegisterandLoginPage() {
             <form>
               <h3 className="text-center mb-4">Login</h3>
               <div className="mb-3">
-                <label className="form-label">Email</label>
+                <label className="form-label">
+                <i className="bi bi-envelope-fill me-2"></i> Email
+                </label>
+
                 <input type="email" className="form-control" placeholder="Enter email" />
               </div>
               <div className="mb-3">
-                <label className="form-label">Password</label>
+              <label className="form-label">
+              <i className="bi bi-lock-fill me-2"></i> Password
+              </label>
+
                 <input type="password" className="form-control" placeholder="Enter password" />
               </div>
               <button type="button" className="btn btn-success w-100">
@@ -78,68 +120,6 @@ function RegisterandLoginPage() {
               </div>
               <button type="button" className="btn btn-primary w-100">
                 Register
-              </button>
-            </form>
-          )}
-
-          {/* GAS BOOKING FORM */}
-          {activeTab === "book" && (
-            <form>
-              <h3 className="text-center mb-4">Gas Reservation</h3>
-
-              <div className="mb-3">
-                <label className="form-label">Full Name</label>
-                <input type="text" className="form-control" placeholder="Receiver's full name" />
-              </div>
-
-              <div className="mb-3">
-                <label className="form-label">Phone</label>
-                <input type="tel" className="form-control" placeholder="e.g. 0300-1234567" />
-              </div>
-
-              <div className="mb-3">
-                <label className="form-label">Cylinder Type</label>
-                <select className="form-select">
-                  <option value="Domestic">Domestic</option>
-                  <option value="Commercial">Commercial</option>
-                </select>
-              </div>
-
-              <div className="mb-3">
-                <label className="form-label">Quantity</label>
-                <input type="number" min="1" className="form-control" defaultValue={1} />
-              </div>
-
-              <h5 className="mt-4">Delivery Address</h5>
-
-              <div className="mb-3">
-                <label className="form-label">Street Address</label>
-                <input type="text" className="form-control" placeholder="House #, Street Name" />
-              </div>
-
-              <div className="row">
-                <div className="col-md-6 mb-3">
-                  <label className="form-label">City</label>
-                  <input type="text" className="form-control" placeholder="City name" />
-                </div>
-                <div className="col-md-6 mb-3">
-                  <label className="form-label">Postal Code / ZIP</label>
-                  <input type="text" className="form-control" placeholder="e.g. 54000" />
-                </div>
-              </div>
-
-              <div className="mb-3">
-                <label className="form-label">Nearest Landmark (Optional)</label>
-                <input type="text" className="form-control" placeholder="Near mosque, school, etc." />
-              </div>
-
-              <div className="mb-3">
-                <label className="form-label">Preferred Delivery Date</label>
-                <input type="date" className="form-control" />
-              </div>
-
-              <button type="button" className="btn btn-warning w-100">
-                Confirm Booking
               </button>
             </form>
           )}
