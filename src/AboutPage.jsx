@@ -1,23 +1,17 @@
 import Navbar from "./Navbar";
-import HeroCarousal from "./HeroCarousal";
 import Hero from "./Hero";
-import ShopNow from "./ShopNow";
 import AboutSection from "./AboutSection";
-import HowItWorks from "./HowItWorks";
 import Footer from "./Footer";
 
-function LandingPage() {
+function AboutPage() {
   return (
     <>
       <Navbar />
-      <HeroCarousal />
       <Hero />
-      <ShopNow />
       <AboutSection />
-      <HowItWorks />
       <Footer />
     </>
   );
 }
 
-export default LandingPage;
+export default AboutPage;

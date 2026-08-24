@@ -1,56 +1,54 @@
 import { Link } from "react-router-dom";
-import "bootstrap/dist/css/bootstrap.min.css";
 
 function ShopNow() {
-  // 🧩 Step 1 — Your original card data, kept same as before
   const shopOptions = [
     {
       icon: "bi bi-shop",
       title: "MARWAT LPG Shop",
-      desc: "Visit our LPG shop for high-quality cylinders.",
+      desc: "LPG cylinders and accessories for home and commercial use.",
       btnText: "Shop Now",
-      btnColor: "btn btn-outline-success",
-      iconColor: "text-success",
-      bgColor: "bg-warning-subtle",
-    },
-    {
-      icon: "bi bi-droplet-fill",
-      title: "LPG Refill",
-      desc: "Get your LPG cylinder refilled quickly and safely.",
-      btnText: "Refill Now",
-      btnColor: "btn btn-outline-danger",
-      iconColor: "text-danger",
+      btnLink: "/shop",
+      btnColor: "btn btn-warning text-dark fw-bold",
+      iconColor: "text-primary",
+      iconBg: "#e8f2ff",
     },
     {
       icon: "bi bi-truck",
       title: "Bulk Deliveries",
-      desc: "Order large quantities for commercial or industrial needs.",
+      desc: "Large-volume LPG supply for restaurants, hotels, businesses and commercial customers.",
       btnText: "Order Bulk",
-      btnColor: "btn btn-outline-warning",
+      btnLink: "/bulk-delivery",
+      btnColor: "btn btn-primary text-white fw-bold",
       iconColor: "text-warning",
+      iconBg: "#fff8e1",
     },
   ];
 
-  // 🧩 Step 2 — Use map() to generate the cards dynamically
   return (
-    <section className="py-5 bg-warning">
-      <div className="container text-center">
-        <h2 className="fw-bold mb-4">
-          <i className="bi bi-bag-check-fill text-secondary me-2"></i>
-          Shop Now
-        </h2>
-
-        <div className="row g-4">
+    <section className="py-5" style={{ backgroundColor: "#f0f5ff" }}>
+      <div className="container">
+        <div className="text-center mb-5">
+          <h2 className="fw-bold text-primary">
+            <i className="bi bi-bag-check-fill text-warning me-2"></i>Our Services
+          </h2>
+          <p className="text-muted">Choose the option that fits your needs</p>
+        </div>
+        <div className="row g-4 justify-content-center">
           {shopOptions.map((item, index) => (
-            <div key={index} className="col-md-4 col-sm-6">
-              <div className="card border-0 shadow-sm p-4 h-100">
-                <div className="card-body">
-                  <i className={`${item.icon} fs-1 ${item.iconColor} mb-3`}></i>
-                  <h5 className="card-title fw-semibold">{item.title}</h5>
-                  <p className="card-text text-muted">{item.desc}</p>
-                  <Link to="/shop" className={`${item.btnColor} px-4 mt-2`}>
-                    {item.btnText}
-                  </Link>
+            <div key={index} className="col-md-6">
+              <div
+                className="card border-0 shadow-sm h-100 rounded-4 p-4"
+                style={{ transition: "box-shadow 0.3s, transform 0.3s" }}
+                onMouseOver={(e) => { e.currentTarget.style.boxShadow = "0 8px 28px rgba(13,110,253,0.12)"; e.currentTarget.style.transform = "translateY(-4px)"; }}
+                onMouseOut={(e) => { e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.08)"; e.currentTarget.style.transform = "translateY(0)"; }}
+              >
+                <div className="card-body text-center">
+                  <div className="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style={{ width: "72px", height: "72px", backgroundColor: item.iconBg }}>
+                    <i className={`${item.icon} fs-1 ${item.iconColor}`}></i>
+                  </div>
+                  <h5 className="card-title fw-bold text-dark">{item.title}</h5>
+                  <p className="card-text text-muted mb-4">{item.desc}</p>
+                  <Link to={item.btnLink} className={`${item.btnColor} px-4`}>{item.btnText}</Link>
                 </div>
               </div>
             </div>

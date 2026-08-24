@@ -1,8 +1,235 @@
-
 .carousel-fade .carousel-item {
   transition: opacity 1s ease-in-out;
 }
 
 .carousel-item img {
   transition: transform 8s ease-in-out;
+}
+
+/* ===== Quantity Control ===== */
+.qty-control {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #0d6efd;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.qty-control button {
+  background: #0d6efd;
+  color: #fff;
+  border: none;
+  width: 36px;
+  height: 36px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.qty-control button:hover {
+  background: #0b5ed7;
+}
+
+.qty-control button:disabled {
+  background: #adb5bd;
+  cursor: not-allowed;
+}
+
+.qty-control .qty-value {
+  min-width: 48px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 1rem;
+  color: #1a2a4a;
+  background: #fff;
+  padding: 0 4px;
+  line-height: 36px;
+}
+
+/* ===== Shop Product Card ===== */
+.shop-card {
+  border: 1px solid #e0e6f0;
+  border-radius: 16px;
+  overflow: hidden;
+  transition: box-shadow 0.3s, transform 0.3s;
+  background: #fff;
+}
+
+.shop-card:hover {
+  box-shadow: 0 8px 28px rgba(13, 110, 253, 0.15);
+  transform: translateY(-4px);
+}
+
+.shop-card .card-img-wrap {
+  height: 200px;
+  overflow: hidden;
+  background: #f0f5ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.shop-card .card-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s;
+}
+
+.shop-card:hover .card-img-wrap img {
+  transform: scale(1.05);
+}
+
+/* ===== About Characteristic Card ===== */
+.about-card {
+  border: 1px solid #e0e6f0;
+  border-radius: 16px;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  background: #fff;
+  transition: box-shadow 0.3s, transform 0.3s, border-color 0.3s;
+  height: 100%;
+}
+
+.about-card:hover {
+  box-shadow: 0 8px 28px rgba(13, 110, 253, 0.12);
+  transform: translateY(-4px);
+  border-color: #0d6efd;
+}
+
+.about-card .about-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  margin-bottom: 1rem;
+}
+
+/* ===== Booking Summary Sticky ===== */
+.booking-summary {
+  position: sticky;
+  top: 80px;
+}
+
+@media (max-width: 991.98px) {
+  .booking-summary {
+    position: static;
+  }
+}
+
+/* ===== Auth Page ===== */
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #e8f2ff 0%, #fff8e1 100%);
+  padding: 1.5rem;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 480px;
+  border: none;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(13, 110, 253, 0.15);
+  overflow: hidden;
+}
+
+.auth-card .auth-header {
+  background: #0d6efd;
+  color: #fff;
+  padding: 1.5rem 1rem;
+  text-align: center;
+}
+
+.auth-card .nav-link {
+  color: #6c757d;
+  border: none;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+}
+
+.auth-card .nav-link.active {
+  color: #0d6efd;
+  border-bottom-color: #ffc107;
+  background: transparent;
+}
+
+.auth-input {
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.95rem;
+}
+
+.auth-input:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+}
+
+.btn-auth-primary {
+  background: #ffc107;
+  color: #1a2a4a;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  padding: 0.7rem 1.5rem;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.btn-auth-primary:hover {
+  background: #ffb300;
+  transform: translateY(-1px);
+}
+
+.btn-auth-secondary {
+  background: #0d6efd;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  padding: 0.7rem 1.5rem;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.btn-auth-secondary:hover {
+  background: #0b5ed7;
+  transform: translateY(-1px);
+}
+
+/* ===== Bulk Delivery ===== */
+.bulk-info-card {
+  border: 1px solid #e0e6f0;
+  border-radius: 16px;
+  background: #fff;
+}
+
+.bulk-benefit-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+}
+
+.bulk-benefit-item i {
+  color: #0d6efd;
+  font-size: 1.25rem;
+  margin-top: 2px;
+}
+
+/* ===== Responsive helpers ===== */
+@media (max-width: 575.98px) {
+  .auth-card {
+    max-width: 100%;
+  }
 }
