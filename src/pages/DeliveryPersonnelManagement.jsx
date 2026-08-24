@@ -3,13 +3,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-
-const initialPersonnel = [
-  { id: 1, name: "Roberto Cruz", email: "roberto.cruz@gasdelivery.com", phone: "+92 300 1234567", vehicleType: "Motorcycle", vehiclePlate: "ABC 1234", status: "Available", completedDeliveries: 156, rating: 4.8 },
-  { id: 2, name: "Carlos Mendoza", email: "carlos.mendoza@gasdelivery.com", phone: "+92 301 2345678", vehicleType: "Truck", vehiclePlate: "XYZ 5678", status: "On Delivery", completedDeliveries: 203, rating: 4.9 },
-  { id: 3, name: "Miguel Ramos", email: "miguel.ramos@gasdelivery.com", phone: "+92 302 3456789", vehicleType: "Van", vehiclePlate: "DEF 9012", status: "Available", completedDeliveries: 128, rating: 4.7 },
-  { id: 4, name: "Luis Torres", email: "luis.torres@gasdelivery.com", phone: "+92 303 4567890", vehicleType: "Motorcycle", vehiclePlate: "GHI 3456", status: "Offline", completedDeliveries: 89, rating: 4.6 },
-];
+import axios from "axios";
 
 const personSchema = z.object({
   name: z.string().min(2, "Name required"),
@@ -21,10 +15,8 @@ const personSchema = z.object({
 });
 
 export default function DeliveryPersonnelManagement() {
-  const [personnel, setPersonnel] = useState(() => {
-    const raw = localStorage.getItem("personnel");
-    return raw ? JSON.parse(raw) : initialPersonnel;
-  });
+  const [personnel, setPersonnel] = useState([]); 
+  const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingPerson, setEditingPerson] = useState(null);
 
@@ -33,12 +25,34 @@ export default function DeliveryPersonnelManagement() {
     defaultValues: { name: "", email: "", phone: "", vehicleType: "", vehiclePlate: "", status: "Available" },
   });
 
-  useEffect(() => { localStorage.setItem("personnel", JSON.stringify(personnel)); }, [personnel]);
+  // 1️⃣ Fetch active fleet members from database directly
+  const fetchPersonnel = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get("http://localhost:5000/api/admin/personnel");
+      setPersonnel(res.data);
+      setLoading(false);
+    } catch (err) {
+      console.error("Error retrieving fleet records:", err);
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPersonnel();
+  }, []);
 
   const openModal = (person = null) => {
     if (person) {
       setEditingPerson(person);
-      reset(person);
+      reset({
+        name: person.name,
+        email: person.email,
+        phone: person.phone,
+        vehicleType: person.vehicleType,
+        vehiclePlate: person.vehiclePlate,
+        status: person.status,
+      });
     } else {
       setEditingPerson(null);
       reset({ name: "", email: "", phone: "", vehicleType: "", vehiclePlate: "", status: "Available" });
@@ -46,19 +60,33 @@ export default function DeliveryPersonnelManagement() {
     setShowModal(true);
   };
 
-  const onSubmit = (data) => {
-    if (editingPerson) {
-      setPersonnel(personnel.map((p) => (p.id === editingPerson.id ? { ...p, ...data } : p)));
-    } else {
-      const newPerson = { ...data, id: Date.now(), completedDeliveries: 0, rating: 5.0 };
-      setPersonnel([...personnel, newPerson]);
+  // 2️⃣ Handle Form Submission (POST/PUT directly to MongoDB)
+  const onSubmit = async (data) => {
+    try {
+      if (editingPerson) {
+        // Update Action
+        const res = await axios.put(`http://localhost:5000/api/admin/personnel/${editingPerson._id}`, data);
+        setPersonnel(personnel.map((p) => (p._id === editingPerson._id ? res.data : p)));
+      } else {
+        // Create Action
+        const res = await axios.post("http://localhost:5000/api/admin/personnel", data);
+        setPersonnel([...personnel, res.data]);
+      }
+      setShowModal(false);
+    } catch (err) {
+      alert(err.response?.data?.message || "Error submitting fleet profile change");
     }
-    setShowModal(false);
   };
 
-  const handleDelete = (id) => {
+  // 3️⃣ Delete Fleet Profile from Database
+  const handleDelete = async (id) => {
     if (window.confirm("Confirm removal of this delivery personnel?")) {
-      setPersonnel(personnel.filter((p) => p.id !== id));
+      try {
+        await axios.delete(`http://localhost:5000/api/admin/personnel/${id}`);
+        setPersonnel(personnel.filter((p) => p._id !== id));
+      } catch (err) {
+        alert("Could not complete delivery personnel deletion.");
+      }
     }
   };
 
@@ -70,6 +98,14 @@ export default function DeliveryPersonnelManagement() {
       default: return { color: "text-secondary", bg: "rgba(108, 117, 125, 0.1)", border: "border-secondary" };
     }
   };
+
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center py-5">
+        <div className="spinner-border text-primary" role="status"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="animate__animated animate__fadeIn text-white">
@@ -92,43 +128,51 @@ export default function DeliveryPersonnelManagement() {
               <th className="ps-4 py-3">Personnel</th>
               <th className="py-3">Vehicle Details</th>
               <th className="py-3 text-center">Status</th>
-              <th className="py-3 text-center">Success Rate</th>
+              <th className="py-3 text-center">Success Metrics</th>
               <th className="pe-4 py-3 text-end">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {personnel.map((p) => {
-              const style = getStatusStyle(p.status);
-              return (
-                <tr key={p.id} className="border-bottom border-secondary transition-all">
-                  <td className="ps-4 py-3">
-                    <div className="fw-bold text-white">{p.name}</div>
-                    <div className="small text-secondary">{p.phone}</div>
-                  </td>
-                  <td>
-                    <div className="text-white small fw-bold">{p.vehicleType}</div>
-                    <div className="text-secondary small tracking-widest">{p.vehiclePlate}</div>
-                  </td>
-                  <td className="text-center">
-                    <span className={`badge rounded-pill px-3 py-2 ${style.color} ${style.border} border`} style={{ backgroundColor: style.bg }}>
-                      {p.status}
-                    </span>
-                  </td>
-                  <td className="text-center">
-                    <div className="fw-bold text-white">{p.completedDeliveries} Trips</div>
-                    <div className="small text-warning">⭐ {p.rating} Rating</div>
-                  </td>
-                  <td className="pe-4 text-end">
-                    <button className="btn btn-outline-warning btn-sm border-0 me-1 p-2" onClick={() => openModal(p)} title="Edit">
-                      ✏️
-                    </button>
-                    <button className="btn btn-outline-danger btn-sm border-0 p-2" onClick={() => handleDelete(p.id)} title="Delete">
-                      🗑️
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
+            {personnel.length === 0 ? (
+              <tr>
+                <td colSpan="5" className="text-center py-4 text-secondary">
+                  No delivery fleet profiles found in database.
+                </td>
+              </tr>
+            ) : (
+              personnel.map((p) => {
+                const style = getStatusStyle(p.status);
+                return (
+                  <tr key={p._id} className="border-bottom border-secondary transition-all">
+                    <td className="ps-4 py-3">
+                      <div className="fw-bold text-white">{p.name}</div>
+                      <div className="small text-secondary">{p.phone}</div>
+                    </td>
+                    <td>
+                      <div className="text-white small fw-bold">{p.vehicleType}</div>
+                      <div className="text-secondary small tracking-widest">{p.vehiclePlate}</div>
+                    </td>
+                    <td className="text-center">
+                      <span className={`badge rounded-pill px-3 py-2 ${style.color} ${style.border} border`} style={{ backgroundColor: style.bg }}>
+                        {p.status}
+                      </span>
+                    </td>
+                    <td className="text-center">
+                      <div className="fw-bold text-white">{p.completedDeliveries || 0} Trips</div>
+                      <div className="small text-warning">⭐ {p.rating || "5.0"} Rating</div>
+                    </td>
+                    <td className="pe-4 text-end">
+                      <button className="btn btn-outline-warning btn-sm border-0 me-1 p-2" onClick={() => openModal(p)} title="Edit">
+                        ✏️
+                      </button>
+                      <button className="btn btn-outline-danger btn-sm border-0 p-2" onClick={() => handleDelete(p._id)} title="Delete">
+                        🗑️
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>
@@ -149,22 +193,27 @@ export default function DeliveryPersonnelManagement() {
                       <div className="col-12">
                         <label className="form-label small text-secondary">Full Name</label>
                         <input className="form-control bg-dark text-white border-secondary" {...register("name")} placeholder="Full Name" />
+                        {errors.name && <small className="text-danger">{errors.name.message}</small>}
                       </div>
                       <div className="col-md-6">
                         <label className="form-label small text-secondary">Email</label>
                         <input className="form-control bg-dark text-white border-secondary" {...register("email")} />
+                        {errors.email && <small className="text-danger">{errors.email.message}</small>}
                       </div>
                       <div className="col-md-6">
                         <label className="form-label small text-secondary">Phone</label>
                         <input className="form-control bg-dark text-white border-secondary" {...register("phone")} />
+                        {errors.phone && <small className="text-danger">{errors.phone.message}</small>}
                       </div>
                       <div className="col-md-6">
                         <label className="form-label small text-secondary">Vehicle Type</label>
                         <input className="form-control bg-dark text-white border-secondary" {...register("vehicleType")} placeholder="Truck, Van, etc." />
+                        {errors.vehicleType && <small className="text-danger">{errors.vehicleType.message}</small>}
                       </div>
                       <div className="col-md-6">
                         <label className="form-label small text-secondary">License Plate</label>
                         <input className="form-control bg-dark text-white border-secondary" {...register("vehiclePlate")} />
+                        {errors.vehiclePlate && <small className="text-danger">{errors.vehiclePlate.message}</small>}
                       </div>
                       <div className="col-12">
                         <label className="form-label small text-secondary">Duty Status</label>

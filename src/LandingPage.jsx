@@ -5,17 +5,21 @@ import ShopNow from "./ShopNow";
 import HowItWorks from "./HowItWorks";
 import Footer from "./Footer";
 
+function LandingPage() {
+  return (
+    <>
+      <Navbar />
 
-function LandingPage ()
-{
-    return (<>
-    <Navbar />
-    <HeroCarousal />    
-    <Hero />
-    <ShopNow />
-    <HowItWorks />
-    <Footer />
-   </> );
-   
+      <main>
+        <HeroCarousal />
+        <Hero />
+        <ShopNow />
+        <HowItWorks />
+      </main>
+
+      <Footer />
+    </>
+  );
 }
+
 export default LandingPage;

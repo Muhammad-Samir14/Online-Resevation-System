@@ -21,8 +21,9 @@ const registerSchema = z.object({
   path: ["confirmPassword"],
 });
 
-function RegisterandLoginPage({ showOnlyBookGas }) {
-  const [activeTab, setActiveTab] = useState("login");
+function RegisterandLoginPage() {
+  //  The Fix
+const [activeTab, setActiveTab] = useState("login");
 
   const {
     register: loginRegister,
@@ -36,63 +37,48 @@ function RegisterandLoginPage({ showOnlyBookGas }) {
     formState: { errors: regErrors },
   } = useForm({ resolver: zodResolver(registerSchema) });
 
-  const onLogin = async (data) => {
-    try {
-      const res = await axios.post("http://localhost:5000/login", data);
-      alert(res.data.message);
-    } catch (err) {
-      console.error(err);
-      alert("Login failed!");
-    }
-  };
+  // Login handler
+// 🛠️ Real-world Login Handler
+const onLogin = async (data) => {
+  try {
+    const res = await axios.post("http://localhost:5000/api/auth/login", data);
+    
+    // 1️⃣ Save User Token & Info so the browser remembers them
+    localStorage.setItem("token", res.data.token);
+    localStorage.setItem("user", JSON.stringify(res.data.user)); 
 
+    alert(`Welcome back, ${res.data.user.name}! 👋`);
+
+    // 2️⃣ Smart Redirect based on who logged in
+    if (res.data.user.role === "admin") {
+      window.location.href = "/admin"; // Load Admin Control Panel
+    } else {
+      window.location.href = "/shop"; // Load standard Gas Booking Shop
+    }
+
+  } catch (err) {
+    console.error(err);
+    alert(err.response?.data?.message || "Login failed!");
+  }
+};
+  // Registration handler 
   const onRegister = async (data) => {
     try {
-      const res = await axios.post("http://localhost:5000/register", data);
+      const backendData = {
+        name: data.fullName, 
+        email: data.email,
+        password: data.password
+      };
+
+      const res = await axios.post("http://localhost:5000/api/auth/register", backendData);
       alert(res.data.message);
+      setActiveTab("login"); 
     } catch (err) {
       console.error(err);
-      alert("Registration failed!");
+      alert(err.response?.data?.message || "Registration failed!");
     }
   };
 
-  // Book Gas form (unchanged)
-  if (showOnlyBookGas) {
-    return (
-      <div className="container mt-5" style={{ maxWidth: "700px" }}>
-        <div className="card shadow-lg border-0 rounded-4" style={{ background: "#f8f9fa" }}>
-          <div className="card-header text-white text-center rounded-top-4" style={{ background: "linear-gradient(90deg, #28a745, #218838)" }}>
-            <h4 className="mb-0">Book Gas</h4>
-          </div>
-          <div className="card-body p-4">
-            <form>
-              <div className="mb-3">
-                <label className="form-label">Full Name</label>
-                <input type="text" className="form-control" placeholder="Enter your name" />
-              </div>
-              <div className="mb-3">
-                <label className="form-label">Delivery Address</label>
-                <input type="text" className="form-control" placeholder="Enter your address" />
-              </div>
-              <div className="mb-3">
-                <label className="form-label"><i className="bi bi-telephone-fill me-2"></i> Contact Number</label>
-                <input type="text" className="form-control" placeholder="03XXXXXXXXX" />
-              </div>
-              <div className="mb-3">
-                <label className="form-label">Preferred Delivery Time</label>
-                <input type="text" className="form-control" placeholder="e.g. 2:00 PM - 4:00 PM" />
-              </div>
-              <button type="button" className="btn w-100 shadow-sm" style={{ background: "linear-gradient(90deg, #28a745, #218838)", color: "white" }}>
-                Submit Booking
-              </button>
-            </form>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ---------------- Login/Register ----------------
   return (
     <div
       className="d-flex align-items-center justify-content-center"

@@ -1,15 +1,75 @@
 import { createBrowserRouter } from "react-router-dom";
+
 import LandingPage from "./LandingPage";
 import RegisterandLoginPage from "./RegisterandLoginPage";
-import AdminLayout from "./pages/AdminLayout"; 
-import ShopNow from "./ShopPage";
+import AdminLayout from "./pages/AdminLayout";
 
+import ShopPage from "./ShopPage";
+import ShopNow from "./ShopNow";
+import BookGasPage from "./BookGasPage";
+
+import AboutUs from "./AboutUs";
+import Contact from "./Contact";
+
+import Navbar from "./Navbar";
+import Footer from "./Footer";
+import HowItWorks from "./HowItWorks";
+
+function PublicShopPage() {
+  return (
+    <>
+      <Navbar />
+
+      <main>
+        <ShopNow />
+        <HowItWorks />
+      </main>
+
+      <Footer />
+    </>
+  );
+}
 
 const route = createBrowserRouter([
-  { path: "/", element: <LandingPage /> },
-  { path: "/register", element: <RegisterandLoginPage /> },
-  { path: "/shop", element: <ShopNow /> },
-  { path: "/admin", element: <AdminLayout /> },
+  {
+    path: "/",
+    element: <LandingPage />,
+  },
+
+  {
+    path: "/about",
+    element: <AboutUs />,
+  },
+
+  {
+    path: "/services",
+    element: <ShopPage />,
+  },
+
+  {
+    path: "/shop",
+    element: <PublicShopPage />,
+  },
+
+  {
+    path: "/contact",
+    element: <Contact />,
+  },
+
+  {
+    path: "/register",
+    element: <RegisterandLoginPage />,
+  },
+
+  {
+    path: "/book-gas",
+    element: <BookGasPage />,
+  },
+
+  {
+    path: "/admin",
+    element: <AdminLayout />,
+  },
 ]);
 
 export default route;

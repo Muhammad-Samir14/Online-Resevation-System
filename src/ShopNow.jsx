@@ -1,57 +1,85 @@
 import { Link } from "react-router-dom";
-import "bootstrap/dist/css/bootstrap.min.css";
 
 function ShopNow() {
-  // 🧩 Step 1 — Your original card data, kept same as before
   const shopOptions = [
     {
-      icon: "bi bi-shop",
-      title: "MARWAT LPG Shop",
-      desc: "Visit our LPG shop for high-quality cylinders.",
-      btnText: "Shop Now",
-      btnColor: "btn btn-outline-success",
-      iconColor: "text-success",
-      bgColor: "bg-warning-subtle",
+      icon: "bi-shop",
+      title: "Marwat LPG Shop",
+      description:
+        "Order quality LPG cylinders for your home with dependable service.",
+      accent: "#198754",
+      button: "Shop Cylinders",
+      path: "/book-gas",
     },
     {
-      icon: "bi bi-droplet-fill",
+      icon: "bi-droplet-fill",
       title: "LPG Refill",
-      desc: "Get your LPG cylinder refilled quickly and safely.",
-      btnText: "Refill Now",
-      btnColor: "btn btn-outline-danger",
-      iconColor: "text-danger",
+      description:
+        "Book a safe and convenient cylinder refill with doorstep delivery.",
+      accent: "#dc3545",
+      button: "Book Refill",
+      path: "/book-gas",
     },
     {
-      icon: "bi bi-truck",
+      icon: "bi-truck",
       title: "Bulk Deliveries",
-      desc: "Order large quantities for commercial or industrial needs.",
-      btnText: "Order Bulk",
-      btnColor: "btn btn-outline-warning",
-      iconColor: "text-warning",
+      description:
+        "Reliable LPG supply solutions for restaurants, shops and businesses.",
+      accent: "#f0ad00",
+      button: "Order Bulk",
+      path: "/book-gas",
     },
   ];
 
-  // 🧩 Step 2 — Use map() to generate the cards dynamically
   return (
-    <section className="py-5 bg-warning">
-      <div className="container text-center">
-        <h2 className="fw-bold mb-4">
-          <i className="bi bi-bag-check-fill text-secondary me-2"></i>
-          Shop Now
-        </h2>
+    <section className="marwat-section marwat-section-light">
+      <div className="container">
+        <div className="text-center mb-5">
+          <span className="section-kicker">Our Services</span>
 
-        <div className="row g-4">
-          {shopOptions.map((item, index) => (
-            <div key={index} className="col-md-4 col-sm-6">
-              <div className="card border-0 shadow-sm p-4 h-100">
-                <div className="card-body">
-                  <i className={`${item.icon} fs-1 ${item.iconColor} mb-3`}></i>
-                  <h5 className="card-title fw-semibold">{item.title}</h5>
-                  <p className="card-text text-muted">{item.desc}</p>
-                  <Link to="/shop" className={`${item.btnColor} px-4 mt-2`}>
-                    {item.btnText}
-                  </Link>
+          <h2 className="section-title display-6">
+            LPG Services Made Simple
+          </h2>
+
+          <p className="section-description">
+            Choose the service you need and reserve your LPG cylinder quickly
+            through Marwat Gas Agency.
+          </p>
+        </div>
+
+        <div className="row g-4 justify-content-center">
+          {shopOptions.map((item) => (
+            <div className="col-lg-4 col-md-6" key={item.title}>
+              <div className="marwat-card h-100 p-4 text-center">
+                <div
+                  className="d-inline-flex align-items-center justify-content-center rounded-circle mb-4"
+                  style={{
+                    width: "72px",
+                    height: "72px",
+                    background: `${item.accent}15`,
+                  }}
+                >
+                  <i
+                    className={`bi ${item.icon} fs-2`}
+                    style={{ color: item.accent }}
+                  ></i>
                 </div>
+
+                <h4 className="fw-bold" style={{ color: "#10233f" }}>
+                  {item.title}
+                </h4>
+
+                <p className="text-muted mb-4">
+                  {item.description}
+                </p>
+
+                <Link
+                  to={item.path}
+                  className="btn marwat-primary-btn px-4 py-2"
+                >
+                  {item.button}
+                  <i className="bi bi-arrow-right ms-2"></i>
+                </Link>
               </div>
             </div>
           ))}
