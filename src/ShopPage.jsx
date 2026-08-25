@@ -1,100 +1,97 @@
-import React, { useState } from "react";
-import sixKgImg from "./assets/6KG.jpg";
-import fifteenKgImg from "./assets/15KG.jpg";
-import fortyFiveKgImg from "./assets/45KG.jpg";
-import BookGasPage from "./BookGasPage";
-import Navbar from "./Navbar";
-import Footer from "./Footer";
-import "./App.css";
+import React, { useState } from 'react';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import sixKgImg from './assets/6KG.jpg';
+import fifteenKgImg from './assets/15KG.jpg';
+import fortyFiveKgImg from './assets/45KG.jpg';
+import BookGasPage from './BookGasPage';
 
 function ShopPage() {
   const [showBookGas, setShowBookGas] = useState(false);
-  const [selectedItem, setSelectedItem] = useState("");
-  const [selectedQty, setSelectedQty] = useState(1);
-  const [quantities, setQuantities] = useState({});
+  const [selectedItem, setSelectedItem] = useState('');
 
+  // ✅ Products stored in an array
   const products = [
-    { name: "Domestic Cylinder", img: sixKgImg, desc: "Ideal for home use, safe and efficient.", size: "6 Kg", unitPrice: 1650 },
-    { name: "Commercial Cylinder", img: fifteenKgImg, desc: "For hotels and restaurants.", size: "15 Kg", unitPrice: 4500 },
-    { name: "Industrial Cylinder", img: fortyFiveKgImg, desc: "For factories and large-scale usage.", size: "45 Kg", unitPrice: 9200 },
+    {
+      name: 'Domestic Cylinder',
+      img: sixKgImg,
+      desc: 'Ideal for home use, safe and efficient.',
+      price: '1650 PKR (6Kg)',
+    },
+    {
+      name: 'Commercial Cylinder',
+      img: fifteenKgImg,
+      desc: 'For hotels and restaurants.',
+      price: '4500 PKR (15Kg)',
+    },
+    {
+      name: 'Industrial Cylinder',
+      img: fortyFiveKgImg,
+      desc: 'For factories and large-scale usage.',
+      price: '9200 PKR (45Kg)',
+    },
   ];
 
-  const getQty = (name) => quantities[name] || 1;
-
-  const decreaseQty = (name) => setQuantities((p) => ({ ...p, [name]: Math.max(1, (p[name] || 1) - 1) }));
-  const increaseQty = (name) => setQuantities((p) => ({ ...p, [name]: (p[name] || 1) + 1 }));
-
-  const handleAddToCart = (item) => {
-    setSelectedItem(item.name);
-    setSelectedQty(getQty(item.name));
+  // ✅ When user clicks Add to Cart
+  const handleAddToCart = (itemName) => {
+    setSelectedItem(itemName);
     setShowBookGas(true);
   };
 
+  // ✅ If user clicked Add to Cart → show BookGasPage
   if (showBookGas) {
     return (
-      <>
-        <Navbar />
-        <div className="py-4">
-          <BookGasPage selectedItem={selectedItem} quantity={selectedQty} onBack={() => setShowBookGas(false)} />
-        </div>
-        <Footer />
-      </>
+      <div className="container mt-5">
+        <h3 className="text-center text-primary mb-4">
+          You selected: <span className="text-danger">{selectedItem}</span>
+        </h3>
+        <BookGasPage selectedItem={selectedItem} />
+      </div>
     );
   }
 
+  // ✅ Show all products using .map()
   return (
-    <>
-      <Navbar />
-      <section className="py-5 bg-light">
-        <div className="container">
-          <div className="text-center mb-5">
-            <h2 className="fw-bold text-primary">
-              <i className="bi bi-shop me-2 text-warning"></i>MARWAT LPG Shop
-            </h2>
-            <p className="text-muted mb-1">Timings: <strong>Mon - Sat, 10:30 AM - 8:30 PM</strong></p>
-            <p className="text-muted">Prices are inclusive of Cylinders and LPG</p>
-          </div>
-          <div className="row g-4">
-            {products.map((item, index) => {
-              const qty = getQty(item.name);
-              const total = item.unitPrice * qty;
-              return (
-                <div key={index} className="col-md-6 col-lg-4">
-                  <div className="shop-card h-100 d-flex flex-column">
-                    <div className="card-img-wrap">
-                      <img src={item.img} alt={item.name} />
-                    </div>
-                    <div className="card-body p-4 d-flex flex-column flex-grow-1">
-                      <h5 className="fw-bold text-dark mb-1">{item.name}</h5>
-                      <span className="badge bg-primary-subtle text-primary mb-2 align-self-start">{item.size}</span>
-                      <p className="text-muted small mb-3">{item.desc}</p>
-                      <p className="fw-bold text-primary fs-5 mb-1">{item.unitPrice.toLocaleString()} PKR</p>
-                      <p className="text-muted small mb-3">per cylinder</p>
-                      <div className="d-flex align-items-center justify-content-between mb-3">
-                        <label className="form-label fw-semibold text-dark mb-0">Quantity</label>
-                        <div className="qty-control">
-                          <button type="button" onClick={() => decreaseQty(item.name)} disabled={qty <= 1}>&minus;</button>
-                          <span className="qty-value">{qty}</span>
-                          <button type="button" onClick={() => increaseQty(item.name)}>+</button>
-                        </div>
-                      </div>
-                      <div className="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
-                        <span className="text-muted fw-semibold">Total</span>
-                        <span className="fw-bold text-dark fs-5">{total.toLocaleString()} PKR</span>
-                      </div>
-                      <button className="btn btn-warning text-dark fw-bold w-100 mt-auto" onClick={() => handleAddToCart(item)}>
-                        <i className="bi bi-cart-plus me-2"></i>Add to Cart
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+    <section className="py-5 bg-light">
+      <div className="container">
+        <div className="text-center mb-5">
+          <h2 className="fw-bold text-primary">
+            <i className="bi bi-shop me-2 text-warning"></i>
+            MARWAT LPG Shop
+          </h2>
+          <p className="text-muted mb-1">
+            Timings: <strong>Mon - Sat, 10:30 AM - 8:30 PM</strong>
+          </p>
+          <p className="text-muted">
+            Prices are inclusive of Cylinders and LPG
+          </p>
         </div>
-      </section>
-      <Footer />
-    </>
+
+        <div className="row g-4">
+          {/* ✅ Using map() to generate each card */}
+          {products.map((item, index) => (
+            <div key={index} className="col-md-4">
+              <div className="p-4 bg-white rounded shadow-sm h-100 text-center">
+                <img
+                  src={item.img}
+                  alt={item.name}
+                  className="img-fluid mb-3 rounded"
+                  style={{ height: '180px' }}
+                />
+                <h5 className="fw-semibold">{item.name}</h5>
+                <p className="text-muted">{item.desc}</p>
+                <p className="fw-bold mb-2">Price: {item.price}</p>
+                <button
+                  className="btn btn-primary px-4"
+                  onClick={() => handleAddToCart(item.name)}
+                >
+                  Add to Cart
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 
