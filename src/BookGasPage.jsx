@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import axios from "axios";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 
 function BookGasPage() {
+  const [searchParams] = useSearchParams();
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -588,10 +590,7 @@ function BookGasPage() {
                 </div>
 
                 <div className="col-lg-4">
-                  <div
-                    className="marwat-card p-4 sticky-lg-top"
-                    style={{ top: "100px" }}
-                  >
+                <div className="marwat-card p-4">
                     <h4 className="fw-bold mb-4">
                       <i className="bi bi-receipt text-primary me-2"></i>
                       Booking Summary

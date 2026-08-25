@@ -1,35 +1,35 @@
 import { Link } from "react-router-dom";
 
 function ShopNow() {
-  const shopOptions = [
-    {
-      icon: "bi-shop",
-      title: "Marwat LPG Shop",
-      description:
-        "Order quality LPG cylinders for your home with dependable service.",
-      accent: "#198754",
-      button: "Shop Cylinders",
-      path: "/book-gas",
-    },
-    {
-      icon: "bi-droplet-fill",
-      title: "LPG Refill",
-      description:
-        "Book a safe and convenient cylinder refill with doorstep delivery.",
-      accent: "#dc3545",
-      button: "Book Refill",
-      path: "/book-gas",
-    },
-    {
-      icon: "bi-truck",
-      title: "Bulk Deliveries",
-      description:
-        "Reliable LPG supply solutions for restaurants, shops and businesses.",
-      accent: "#f0ad00",
-      button: "Order Bulk",
-      path: "/book-gas",
-    },
-  ];
+ const shopOptions = [
+  {
+    icon: "bi-shop",
+    title: "Marwat LPG Shop",
+    description:
+      "Browse domestic, commercial and industrial LPG cylinders and accessories.",
+    accent: "#198754",
+    button: "View Shop",
+    path: "/services",
+  },
+  {
+    icon: "bi-droplet-fill",
+    title: "LPG Refill",
+    description:
+      "Book a safe and convenient cylinder refill with doorstep delivery.",
+    accent: "#dc3545",
+    button: "Book Refill",
+    path: "/book-gas?service=refill",
+  },
+  {
+    icon: "bi-truck",
+    title: "Bulk Deliveries",
+    description:
+      "Reliable LPG supply solutions for restaurants, shops and businesses.",
+    accent: "#f0ad00",
+    button: "Order Bulk",
+    path: "/book-gas?service=bulk",
+  },
+];
 
   return (
     <section className="marwat-section marwat-section-light">
