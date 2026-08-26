@@ -2,14 +2,16 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import axios from "axios";
+import { supabase } from "./supabaseClient";
 import { Link } from "react-router-dom";
 
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 
 const loginSchema = z.object({
-  email: z.string().email("Invalid email address"),
+  emailOrPhone: z
+    .string()
+    .min(1, "Enter your email or phone number"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
@@ -56,58 +58,43 @@ function RegisterandLoginPage() {
 
   const onLogin = async (data) => {
     try {
-      const res = await axios.post(
-        "http://localhost:5000/api/auth/login",
-        data
-      );
+      const { data: authData, error } = await supabase.auth.signInWithPassword({
+        email: data.emailOrPhone,
+        password: data.password,
+      });
 
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem(
-        "user",
-        JSON.stringify(res.data.user)
-      );
+      if (error) throw error;
 
-      alert(`Welcome back, ${res.data.user.name}! 👋`);
+      localStorage.setItem("user", JSON.stringify(authData.user));
 
-      if (res.data.user.role === "admin") {
-        window.location.href = "/admin";
-      } else {
-        window.location.href = "/shop";
-      }
+      alert(`Welcome back!`);
+      window.location.href = "/shop";
     } catch (err) {
       console.error(err);
-
-      alert(
-        err.response?.data?.message ||
-          "Login failed!"
-      );
+      alert(err.message || "Login failed!");
     }
   };
 
   const onRegister = async (data) => {
     try {
-      const backendData = {
-        name: data.fullName,
-        phoneNumber: data.phoneNumber,
+      const { data: authData, error } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
-      };
+        options: {
+          data: {
+            full_name: data.fullName,
+            phone_number: data.phoneNumber,
+          },
+        },
+      });
 
-      const res = await axios.post(
-        "http://localhost:5000/api/auth/register",
-        backendData
-      );
+      if (error) throw error;
 
-      alert(res.data.message);
-
+      alert("Registration successful! Please check your email to confirm.");
       setActiveTab("login");
     } catch (err) {
       console.error(err);
-
-      alert(
-        err.response?.data?.message ||
-          "Registration failed!"
-      );
+      alert(err.message || "Registration failed!");
     }
   };
 
@@ -122,457 +109,341 @@ function RegisterandLoginPage() {
           background: "#f5f8fc",
         }}
       >
-        <div className="container py-5">
-          <div
-            className="row justify-content-center align-items-center"
-          >
-            <div className="col-xl-10 col-lg-11">
+        <div className="container py-4 py-md-5">
+          <div className="row justify-content-center">
+            <div className="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5">
               <div
-                className="row g-0 overflow-hidden shadow-lg"
+                className="shadow-lg overflow-hidden"
                 style={{
                   borderRadius: "22px",
                   background: "#ffffff",
                 }}
               >
-                {/* LEFT BRAND PANEL */}
+                {/* BRAND HEADER */}
                 <div
-                  className="col-lg-5 d-none d-lg-flex flex-column justify-content-between p-5 text-white"
+                  className="p-4 p-md-5 text-white text-center"
                   style={{
                     background:
-                      "linear-gradient(145deg, #10233f 0%, #084298 100%)",
+                      "linear-gradient(135deg, #084298 0%, #0d6efd 100%)",
                   }}
                 >
-                  <div>
-                    <div
-                      className="d-inline-flex align-items-center justify-content-center rounded-circle mb-4"
-                      style={{
-                        width: "64px",
-                        height: "64px",
-                        background:
-                          "rgba(255,193,7,.15)",
-                      }}
-                    >
-                      <i className="bi bi-fire fs-2 text-warning"></i>
-                    </div>
-
-                    <h2 className="fw-bold mb-3">
-                      Marwat Gas Agency
-                    </h2>
-
-                    <p className="text-white-50 fs-5">
-                      Fast, reliable and convenient LPG
-                      reservation and delivery services.
-                    </p>
+                  <div
+                    className="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
+                    style={{
+                      width: "56px",
+                      height: "56px",
+                      background: "rgba(255,255,255,.15)",
+                    }}
+                  >
+                    <i className="bi bi-fire fs-2 text-warning"></i>
                   </div>
 
-                  <div>
-                    <div className="d-flex align-items-center mb-3">
-                      <i className="bi bi-shield-check text-warning me-3"></i>
-                      Safe & dependable LPG service
-                    </div>
+                  <h4 className="fw-bold mb-1">
+                    Marwat Gas Agency
+                  </h4>
 
-                    <div className="d-flex align-items-center mb-3">
-                      <i className="bi bi-truck text-warning me-3"></i>
-                      Convenient doorstep delivery
-                    </div>
-
-                    <div className="d-flex align-items-center">
-                      <i className="bi bi-phone text-warning me-3"></i>
-                      Easy online booking
-                    </div>
-                  </div>
+                  <p className="text-white-50 small mb-0">
+                    Secure account access
+                  </p>
                 </div>
 
                 {/* FORM PANEL */}
-                <div className="col-lg-7">
-                  <div className="p-4 p-md-5">
-                    {/* MOBILE BRAND */}
-                    <div className="d-lg-none text-center mb-4">
-                      <div
-                        className="d-inline-flex align-items-center justify-content-center rounded-circle mb-2"
+                <div className="p-4 p-md-5">
+                  {/* TABS */}
+                  <div className="d-flex justify-content-center mb-4">
+                    <div
+                      className="d-flex p-1 w-100"
+                      style={{
+                        background: "#eef3f8",
+                        borderRadius: "12px",
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab("login")}
+                        className="btn flex-grow-1"
                         style={{
-                          width: "55px",
-                          height: "55px",
-                          background: "#fff4cc",
+                          borderRadius: "9px",
+                          background:
+                            activeTab === "login"
+                              ? "#0d6efd"
+                              : "transparent",
+                          color:
+                            activeTab === "login"
+                                ? "#fff"
+                                : "#5d6877",
+                          fontWeight: 600,
                         }}
                       >
-                        <i className="bi bi-fire fs-3 text-warning"></i>
+                        Login
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab("register")}
+                        className="btn flex-grow-1"
+                        style={{
+                          borderRadius: "9px",
+                          background:
+                            activeTab === "register"
+                              ? "#0d6efd"
+                              : "transparent",
+                          color:
+                            activeTab === "register"
+                                ? "#fff"
+                                : "#5d6877",
+                          fontWeight: 600,
+                        }}
+                      >
+                        Register
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* LOGIN */}
+                  {activeTab === "login" && (
+                    <form onSubmit={handleLoginSubmit(onLogin)}>
+                      <div className="text-center mb-4">
+                        <span className="section-kicker">
+                          Welcome Back
+                        </span>
+
+                        <h2 className="section-title mb-1">
+                          Login to Your Account
+                        </h2>
+
+                        <p className="text-muted">
+                          Access your bookings and account.
+                        </p>
                       </div>
 
-                      <h4
-                        className="fw-bold mb-1"
-                        style={{ color: "#10233f" }}
-                      >
-                        Marwat Gas Agency
-                      </h4>
+                      <div className="mb-3">
+                        <label className="form-label fw-semibold">
+                          Email or Phone Number
+                        </label>
 
-                      <p className="text-muted small mb-0">
-                        Secure account access
-                      </p>
-                    </div>
+                        <div className="input-group">
+                          <span className="input-group-text bg-white">
+                            <i className="bi bi-person"></i>
+                          </span>
 
-                    {/* TABS */}
-                    <div className="d-flex justify-content-center mb-4">
-                      <div
-                        className="d-flex p-1"
-                        style={{
-                          background: "#eef3f8",
-                          borderRadius: "12px",
-                        }}
-                      >
+                          <input
+                            type="text"
+                            className={`form-control marwat-input ${
+                              loginErrors.emailOrPhone ? "is-invalid" : ""
+                            }`}
+                            placeholder="example@email.com or 03XX XXXXXXX"
+                            {...loginRegister("emailOrPhone")}
+                          />
+                        </div>
+
+                        {loginErrors.emailOrPhone && (
+                          <div className="text-danger small mt-1">
+                            {loginErrors.emailOrPhone.message}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="mb-3">
+                        <label className="form-label fw-semibold">
+                          Password
+                        </label>
+
+                        <div className="input-group">
+                          <span className="input-group-text bg-white">
+                            <i className="bi bi-lock"></i>
+                          </span>
+
+                          <input
+                            type="password"
+                            className={`form-control marwat-input ${
+                              loginErrors.password ? "is-invalid" : ""
+                            }`}
+                            placeholder="Enter password"
+                            {...loginRegister("password")}
+                          />
+                        </div>
+
+                        {loginErrors.password && (
+                          <div className="text-danger small mt-1">
+                            {loginErrors.password.message}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="text-end mb-4">
                         <button
                           type="button"
-                          onClick={() =>
-                            setActiveTab("login")
-                          }
-                          className="btn px-4"
-                          style={{
-                            borderRadius: "9px",
-                            background:
-                              activeTab === "login"
-                                ? "#10233f"
-                                : "transparent",
-                            color:
-                              activeTab === "login"
-                                ? "#fff"
-                                : "#5d6877",
-                            fontWeight: 600,
-                          }}
+                          className="btn btn-link p-0 text-decoration-none small"
                         >
-                          Login
+                          Forgot Password?
                         </button>
+                      </div>
 
+                      <button
+                        type="submit"
+                        className="btn marwat-primary-btn w-100 py-3"
+                      >
+                        Login
+                        <i className="bi bi-arrow-right ms-2"></i>
+                      </button>
+
+                      <p className="text-center mt-4 mb-0">
+                        Don't have an account?{" "}
                         <button
                           type="button"
-                          onClick={() =>
-                            setActiveTab("register")
-                          }
-                          className="btn px-4"
-                          style={{
-                            borderRadius: "9px",
-                            background:
-                              activeTab === "register"
-                                ? "#10233f"
-                                : "transparent",
-                            color:
-                              activeTab === "register"
-                                ? "#fff"
-                                : "#5d6877",
-                            fontWeight: 600,
-                          }}
+                          className="btn btn-link p-0 fw-bold text-decoration-none"
+                          onClick={() => setActiveTab("register")}
                         >
                           Register
                         </button>
+                      </p>
+                    </form>
+                  )}
+
+                  {/* REGISTER */}
+                  {activeTab === "register" && (
+                    <form onSubmit={handleRegSubmit(onRegister)}>
+                      <div className="text-center mb-4">
+                        <span className="section-kicker">
+                          Create Account
+                        </span>
+
+                        <h2 className="section-title mb-1">
+                          Register with Marwat Gas
+                        </h2>
+
+                        <p className="text-muted">
+                          Create your account for faster future bookings.
+                        </p>
                       </div>
-                    </div>
 
-                    {/* LOGIN */}
-                    {activeTab === "login" && (
-                      <form
-                        onSubmit={handleLoginSubmit(
-                          onLogin
-                        )}
-                      >
-                        <div className="text-center mb-4">
-                          <span className="section-kicker">
-                            Welcome Back
-                          </span>
+                      <div className="row g-3">
+                        <div className="col-12">
+                          <label className="form-label fw-semibold">
+                            Full Name
+                          </label>
 
-                          <h2 className="section-title mb-1">
-                            Login to Your Account
-                          </h2>
+                          <input
+                            type="text"
+                            className={`form-control marwat-input ${
+                              regErrors.fullName ? "is-invalid" : ""
+                            }`}
+                            placeholder="Your full name"
+                            {...regRegister("fullName")}
+                          />
 
-                          <p className="text-muted">
-                            Access your bookings and account.
-                          </p>
+                          <div className="invalid-feedback">
+                            {regErrors.fullName?.message}
+                          </div>
                         </div>
 
-                        <div className="mb-3">
+                        <div className="col-12">
+                          <label className="form-label fw-semibold">
+                            Phone Number
+                          </label>
+
+                          <input
+                            type="tel"
+                            className={`form-control marwat-input ${
+                              regErrors.phoneNumber ? "is-invalid" : ""
+                            }`}
+                            placeholder="03XX XXXXXXX"
+                            {...regRegister("phoneNumber")}
+                          />
+
+                          <div className="invalid-feedback">
+                            {regErrors.phoneNumber?.message}
+                          </div>
+                        </div>
+
+                        <div className="col-12">
                           <label className="form-label fw-semibold">
                             Email Address
                           </label>
 
-                          <div className="input-group">
-                            <span className="input-group-text bg-white">
-                              <i className="bi bi-envelope"></i>
-                            </span>
+                          <input
+                            type="email"
+                            className={`form-control marwat-input ${
+                              regErrors.email ? "is-invalid" : ""
+                            }`}
+                            placeholder="example@email.com"
+                            {...regRegister("email")}
+                          />
 
-                            <input
-                              type="email"
-                              className={`form-control marwat-input ${
-                                loginErrors.email
-                                  ? "is-invalid"
-                                  : ""
-                              }`}
-                              placeholder="example@email.com"
-                              {...loginRegister("email")}
-                            />
+                          <div className="invalid-feedback">
+                            {regErrors.email?.message}
                           </div>
-
-                          {loginErrors.email && (
-                            <div className="text-danger small mt-1">
-                              {
-                                loginErrors.email
-                                  .message
-                              }
-                            </div>
-                          )}
                         </div>
 
-                        <div className="mb-3">
+                        <div className="col-md-6">
                           <label className="form-label fw-semibold">
                             Password
                           </label>
 
-                          <div className="input-group">
-                            <span className="input-group-text bg-white">
-                              <i className="bi bi-lock"></i>
-                            </span>
+                          <input
+                            type="password"
+                            className={`form-control marwat-input ${
+                              regErrors.password ? "is-invalid" : ""
+                            }`}
+                            placeholder="Minimum 6 characters"
+                            {...regRegister("password")}
+                          />
 
-                            <input
-                              type="password"
-                              className={`form-control marwat-input ${
-                                loginErrors.password
-                                  ? "is-invalid"
-                                  : ""
-                              }`}
-                              placeholder="Enter password"
-                              {...loginRegister(
-                                "password"
-                              )}
-                            />
+                          <div className="invalid-feedback">
+                            {regErrors.password?.message}
                           </div>
-
-                          {loginErrors.password && (
-                            <div className="text-danger small mt-1">
-                              {
-                                loginErrors.password
-                                  .message
-                              }
-                            </div>
-                          )}
                         </div>
 
-                        <div className="text-end mb-4">
-                          <button
-                            type="button"
-                            className="btn btn-link p-0 text-decoration-none small"
-                          >
-                            Forgot Password?
-                          </button>
-                        </div>
+                        <div className="col-md-6">
+                          <label className="form-label fw-semibold">
+                            Confirm Password
+                          </label>
 
+                          <input
+                            type="password"
+                            className={`form-control marwat-input ${
+                              regErrors.confirmPassword ? "is-invalid" : ""
+                            }`}
+                            placeholder="Repeat password"
+                            {...regRegister("confirmPassword")}
+                          />
+
+                          <div className="invalid-feedback">
+                            {regErrors.confirmPassword?.message}
+                          </div>
+                        </div>
+                      </div>
+
+                      <button
+                        type="submit"
+                        className="btn marwat-primary-btn w-100 py-3 mt-4"
+                      >
+                        Create Account
+                        <i className="bi bi-person-plus ms-2"></i>
+                      </button>
+
+                      <p className="text-center mt-4 mb-0">
+                        Already have an account?{" "}
                         <button
-                          type="submit"
-                          className="btn marwat-primary-btn w-100 py-3"
+                          type="button"
+                          className="btn btn-link p-0 fw-bold text-decoration-none"
+                          onClick={() => setActiveTab("login")}
                         >
                           Login
-                          <i className="bi bi-arrow-right ms-2"></i>
                         </button>
+                      </p>
+                    </form>
+                  )}
 
-                        <p className="text-center mt-4 mb-0">
-                          Don't have an account?{" "}
-                          <button
-                            type="button"
-                            className="btn btn-link p-0 fw-bold text-decoration-none"
-                            onClick={() =>
-                              setActiveTab(
-                                "register"
-                              )
-                            }
-                          >
-                            Register
-                          </button>
-                        </p>
-                      </form>
-                    )}
-
-                    {/* REGISTER */}
-                    {activeTab === "register" && (
-                      <form
-                        onSubmit={handleRegSubmit(
-                          onRegister
-                        )}
-                      >
-                        <div className="text-center mb-4">
-                          <span className="section-kicker">
-                            Create Account
-                          </span>
-
-                          <h2 className="section-title mb-1">
-                            Register with Marwat Gas
-                          </h2>
-
-                          <p className="text-muted">
-                            Create your account for faster
-                            future bookings.
-                          </p>
-                        </div>
-
-                        <div className="row g-3">
-                          <div className="col-md-6">
-                            <label className="form-label fw-semibold">
-                              Full Name
-                            </label>
-
-                            <input
-                              type="text"
-                              className={`form-control marwat-input ${
-                                regErrors.fullName
-                                  ? "is-invalid"
-                                  : ""
-                              }`}
-                              placeholder="Your full name"
-                              {...regRegister(
-                                "fullName"
-                              )}
-                            />
-
-                            <div className="invalid-feedback">
-                              {
-                                regErrors.fullName
-                                  ?.message
-                              }
-                            </div>
-                          </div>
-
-                          <div className="col-md-6">
-                            <label className="form-label fw-semibold">
-                              Mobile Number
-                            </label>
-
-                            <input
-                              type="tel"
-                              className={`form-control marwat-input ${
-                                regErrors.phoneNumber
-                                  ? "is-invalid"
-                                  : ""
-                              }`}
-                              placeholder="03XX XXXXXXX"
-                              {...regRegister(
-                                "phoneNumber"
-                              )}
-                            />
-
-                            <div className="invalid-feedback">
-                              {
-                                regErrors
-                                  .phoneNumber?.message
-                              }
-                            </div>
-                          </div>
-
-                          <div className="col-12">
-                            <label className="form-label fw-semibold">
-                              Email Address
-                            </label>
-
-                            <input
-                              type="email"
-                              className={`form-control marwat-input ${
-                                regErrors.email
-                                  ? "is-invalid"
-                                  : ""
-                              }`}
-                              placeholder="example@email.com"
-                              {...regRegister("email")}
-                            />
-
-                            <div className="invalid-feedback">
-                              {
-                                regErrors.email?.message
-                              }
-                            </div>
-                          </div>
-
-                          <div className="col-md-6">
-                            <label className="form-label fw-semibold">
-                              Password
-                            </label>
-
-                            <input
-                              type="password"
-                              className={`form-control marwat-input ${
-                                regErrors.password
-                                  ? "is-invalid"
-                                  : ""
-                              }`}
-                              placeholder="Minimum 6 characters"
-                              {...regRegister(
-                                "password"
-                              )}
-                            />
-
-                            <div className="invalid-feedback">
-                              {
-                                regErrors.password
-                                  ?.message
-                              }
-                            </div>
-                          </div>
-
-                          <div className="col-md-6">
-                            <label className="form-label fw-semibold">
-                              Confirm Password
-                            </label>
-
-                            <input
-                              type="password"
-                              className={`form-control marwat-input ${
-                                regErrors.confirmPassword
-                                  ? "is-invalid"
-                                  : ""
-                              }`}
-                              placeholder="Repeat password"
-                              {...regRegister(
-                                "confirmPassword"
-                              )}
-                            />
-
-                            <div className="invalid-feedback">
-                              {
-                                regErrors
-                                  .confirmPassword
-                                  ?.message
-                              }
-                            </div>
-                          </div>
-                        </div>
-
-                        <button
-                          type="submit"
-                          className="btn marwat-primary-btn w-100 py-3 mt-4"
-                        >
-                          Create Account
-                          <i className="bi bi-person-plus ms-2"></i>
-                        </button>
-
-                        <p className="text-center mt-4 mb-0">
-                          Already have an account?{" "}
-                          <button
-                            type="button"
-                            className="btn btn-link p-0 fw-bold text-decoration-none"
-                            onClick={() =>
-                              setActiveTab(
-                                "login"
-                              )
-                            }
-                          >
-                            Login
-                          </button>
-                        </p>
-                      </form>
-                    )}
-
-                    <div className="text-center mt-4">
-                      <Link
-                        to="/"
-                        className="text-muted text-decoration-none small"
-                      >
-                        <i className="bi bi-arrow-left me-1"></i>
-                        Back to Home
-                      </Link>
-                    </div>
+                  <div className="text-center mt-4">
+                    <Link
+                      to="/"
+                      className="text-muted text-decoration-none small"
+                    >
+                      <i className="bi bi-arrow-left me-1"></i>
+                      Back to Home
+                    </Link>
                   </div>
                 </div>
               </div>

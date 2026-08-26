@@ -3,7 +3,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import axios from "axios";
+import { supabase } from "../supabaseClient";
 
 const personSchema = z.object({
   name: z.string().min(2, "Name required"),
@@ -15,7 +15,7 @@ const personSchema = z.object({
 });
 
 export default function DeliveryPersonnelManagement() {
-  const [personnel, setPersonnel] = useState([]); 
+  const [personnel, setPersonnel] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingPerson, setEditingPerson] = useState(null);
@@ -25,12 +25,15 @@ export default function DeliveryPersonnelManagement() {
     defaultValues: { name: "", email: "", phone: "", vehicleType: "", vehiclePlate: "", status: "Available" },
   });
 
-  // 1️⃣ Fetch active fleet members from database directly
   const fetchPersonnel = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://localhost:5000/api/admin/personnel");
-      setPersonnel(res.data);
+      const { data, error } = await supabase
+        .from("delivery_personnel")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      setPersonnel(data || []);
       setLoading(false);
     } catch (err) {
       console.error("Error retrieving fleet records:", err);
@@ -60,30 +63,36 @@ export default function DeliveryPersonnelManagement() {
     setShowModal(true);
   };
 
-  // 2️⃣ Handle Form Submission (POST/PUT directly to MongoDB)
   const onSubmit = async (data) => {
     try {
       if (editingPerson) {
-        // Update Action
-        const res = await axios.put(`http://localhost:5000/api/admin/personnel/${editingPerson._id}`, data);
-        setPersonnel(personnel.map((p) => (p._id === editingPerson._id ? res.data : p)));
+        const { data: updated, error } = await supabase
+          .from("delivery_personnel")
+          .update(data)
+          .eq("id", editingPerson.id)
+          .select();
+        if (error) throw error;
+        setPersonnel(personnel.map((p) => (p.id === editingPerson.id ? updated[0] : p)));
       } else {
-        // Create Action
-        const res = await axios.post("http://localhost:5000/api/admin/personnel", data);
-        setPersonnel([...personnel, res.data]);
+        const { data: created, error } = await supabase
+          .from("delivery_personnel")
+          .insert([data])
+          .select();
+        if (error) throw error;
+        setPersonnel([...personnel, created[0]]);
       }
       setShowModal(false);
     } catch (err) {
-      alert(err.response?.data?.message || "Error submitting fleet profile change");
+      alert(err.message || "Error submitting fleet profile change");
     }
   };
 
-  // 3️⃣ Delete Fleet Profile from Database
   const handleDelete = async (id) => {
     if (window.confirm("Confirm removal of this delivery personnel?")) {
       try {
-        await axios.delete(`http://localhost:5000/api/admin/personnel/${id}`);
-        setPersonnel(personnel.filter((p) => p._id !== id));
+        const { error } = await supabase.from("delivery_personnel").delete().eq("id", id);
+        if (error) throw error;
+        setPersonnel(personnel.filter((p) => p.id !== id));
       } catch (err) {
         alert("Could not complete delivery personnel deletion.");
       }
@@ -92,10 +101,10 @@ export default function DeliveryPersonnelManagement() {
 
   const getStatusStyle = (status) => {
     switch (status) {
-      case "Available": return { color: "text-success", bg: "rgba(40, 167, 69, 0.1)", border: "border-success" };
-      case "On Delivery": return { color: "text-primary", bg: "rgba(13, 110, 253, 0.1)", border: "border-primary" };
-      case "Offline": return { color: "text-secondary", bg: "rgba(108, 117, 125, 0.1)", border: "border-secondary" };
-      default: return { color: "text-secondary", bg: "rgba(108, 117, 125, 0.1)", border: "border-secondary" };
+      case "Available": return { color: "#198754", bg: "rgba(25, 135, 84, 0.1)" };
+      case "On Delivery": return { color: "#0d6efd", bg: "rgba(13, 110, 253, 0.1)" };
+      case "Offline": return { color: "#6c757d", bg: "rgba(108, 117, 125, 0.1)" };
+      default: return { color: "#6c757d", bg: "rgba(108, 117, 125, 0.1)" };
     }
   };
 
@@ -108,34 +117,46 @@ export default function DeliveryPersonnelManagement() {
   }
 
   return (
-    <div className="animate__animated animate__fadeIn text-white">
-      {/* Page Header */}
-      <div className="d-flex justify-content-between align-items-center mb-4 bg-dark p-4 rounded-4 shadow-lg border border-secondary">
+    <div>
+      <div
+        className="d-flex justify-content-between align-items-center mb-4 p-4 rounded-4 shadow-sm"
+        style={{ background: "#fff", border: "1px solid #dce5f0" }}
+      >
         <div>
-          <h3 className="fw-bold text-primary mb-1">Fleet Management</h3>
-          <p className="text-secondary small mb-0">Track delivery personnel, vehicles, and performance</p>
+          <h3 className="fw-bold mb-1" style={{ color: "#10233f" }}>
+            <i className="bi bi-truck text-primary me-2"></i>
+            Fleet Management
+          </h3>
+          <p className="text-muted small mb-0">Track delivery personnel, vehicles, and performance</p>
         </div>
-        <button className="btn btn-primary px-4 fw-bold" onClick={() => openModal()} style={{ borderRadius: "10px" }}>
-          + Add Personnel
+        <button
+          className="btn btn-primary px-4 fw-bold"
+          onClick={() => openModal()}
+          style={{ borderRadius: "10px" }}
+        >
+          <i className="bi bi-plus-lg me-1"></i>
+          Add Personnel
         </button>
       </div>
 
-      {/* Table Container */}
-      <div className="card bg-dark border-secondary shadow-lg overflow-hidden" style={{ borderRadius: "20px" }}>
-        <table className="table table-dark table-hover mb-0 align-middle">
-          <thead className="text-secondary small text-uppercase">
-            <tr className="border-bottom border-secondary">
-              <th className="ps-4 py-3">Personnel</th>
-              <th className="py-3">Vehicle Details</th>
-              <th className="py-3 text-center">Status</th>
-              <th className="py-3 text-center">Success Metrics</th>
-              <th className="pe-4 py-3 text-end">Actions</th>
+      <div
+        className="card shadow-sm overflow-hidden"
+        style={{ borderRadius: "16px", border: "1px solid #dce5f0" }}
+      >
+        <table className="table table-hover mb-0 align-middle">
+          <thead style={{ background: "#eef5ff" }}>
+            <tr style={{ borderBottom: "2px solid #d9e6f8" }}>
+              <th className="ps-4 py-3 text-uppercase fw-bold small" style={{ color: "#6c757d" }}>Personnel</th>
+              <th className="py-3 text-uppercase fw-bold small" style={{ color: "#6c757d" }}>Vehicle</th>
+              <th className="py-3 text-center text-uppercase fw-bold small" style={{ color: "#6c757d" }}>Status</th>
+              <th className="py-3 text-center text-uppercase fw-bold small" style={{ color: "#6c757d" }}>Metrics</th>
+              <th className="pe-4 py-3 text-end text-uppercase fw-bold small" style={{ color: "#6c757d" }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {personnel.length === 0 ? (
               <tr>
-                <td colSpan="5" className="text-center py-4 text-secondary">
+                <td colSpan="5" className="text-center py-4 text-muted">
                   No delivery fleet profiles found in database.
                 </td>
               </tr>
@@ -143,30 +164,46 @@ export default function DeliveryPersonnelManagement() {
               personnel.map((p) => {
                 const style = getStatusStyle(p.status);
                 return (
-                  <tr key={p._id} className="border-bottom border-secondary transition-all">
+                  <tr key={p.id} className="border-top" style={{ borderColor: "#eef3f8" }}>
                     <td className="ps-4 py-3">
-                      <div className="fw-bold text-white">{p.name}</div>
-                      <div className="small text-secondary">{p.phone}</div>
+                      <div className="fw-bold" style={{ color: "#10233f" }}>{p.name}</div>
+                      <small className="text-muted">{p.phone}</small>
                     </td>
                     <td>
-                      <div className="text-white small fw-bold">{p.vehicleType}</div>
-                      <div className="text-secondary small tracking-widest">{p.vehiclePlate}</div>
+                      <div className="small fw-bold" style={{ color: "#172033" }}>{p.vehicleType}</div>
+                      <small className="text-muted" style={{ letterSpacing: "1px" }}>{p.vehiclePlate}</small>
                     </td>
                     <td className="text-center">
-                      <span className={`badge rounded-pill px-3 py-2 ${style.color} ${style.border} border`} style={{ backgroundColor: style.bg }}>
+                      <span
+                        className="badge rounded-pill px-3 py-2 border"
+                        style={{ backgroundColor: style.bg, color: style.color, borderColor: style.color }}
+                      >
                         {p.status}
                       </span>
                     </td>
                     <td className="text-center">
-                      <div className="fw-bold text-white">{p.completedDeliveries || 0} Trips</div>
-                      <div className="small text-warning">⭐ {p.rating || "5.0"} Rating</div>
+                      <div className="fw-bold" style={{ color: "#10233f" }}>{p.completedDeliveries || 0} Trips</div>
+                      <div className="small" style={{ color: "#e5aa00" }}>
+                        <i className="bi bi-star-fill me-1"></i>
+                        {p.rating || "5.0"} Rating
+                      </div>
                     </td>
                     <td className="pe-4 text-end">
-                      <button className="btn btn-outline-warning btn-sm border-0 me-1 p-2" onClick={() => openModal(p)} title="Edit">
-                        ✏️
+                      <button
+                        className="btn btn-sm me-1"
+                        style={{ background: "#fff8dd", color: "#e5aa00", border: "1px solid #ffe38c" }}
+                        onClick={() => openModal(p)}
+                        title="Edit"
+                      >
+                        <i className="bi bi-pencil-fill"></i>
                       </button>
-                      <button className="btn btn-outline-danger btn-sm border-0 p-2" onClick={() => handleDelete(p._id)} title="Delete">
-                        🗑️
+                      <button
+                        className="btn btn-sm"
+                        style={{ background: "#fde8e8", color: "#dc3545", border: "1px solid #f5c2c7" }}
+                        onClick={() => handleDelete(p.id)}
+                        title="Delete"
+                      >
+                        <i className="bi bi-trash-fill"></i>
                       </button>
                     </td>
                   </tr>
@@ -177,63 +214,62 @@ export default function DeliveryPersonnelManagement() {
         </table>
       </div>
 
-      {/* Modal Section */}
       {showModal && (
-        <>
-          <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: "rgba(0,0,0,0.85)" }}>
-            <div className="modal-dialog modal-dialog-centered">
-              <div className="modal-content bg-dark text-white border-secondary shadow-lg" style={{ borderRadius: "20px" }}>
-                <form onSubmit={handleSubmit(onSubmit)}>
-                  <div className="modal-header border-secondary">
-                    <h5 className="modal-title fw-bold text-primary">{editingPerson ? "Edit Profile" : "New Fleet Member"}</h5>
-                    <button type="button" className="btn-close btn-close-white" onClick={() => setShowModal(false)} />
-                  </div>
-                  <div className="modal-body p-4">
-                    <div className="row g-3">
-                      <div className="col-12">
-                        <label className="form-label small text-secondary">Full Name</label>
-                        <input className="form-control bg-dark text-white border-secondary" {...register("name")} placeholder="Full Name" />
-                        {errors.name && <small className="text-danger">{errors.name.message}</small>}
-                      </div>
-                      <div className="col-md-6">
-                        <label className="form-label small text-secondary">Email</label>
-                        <input className="form-control bg-dark text-white border-secondary" {...register("email")} />
-                        {errors.email && <small className="text-danger">{errors.email.message}</small>}
-                      </div>
-                      <div className="col-md-6">
-                        <label className="form-label small text-secondary">Phone</label>
-                        <input className="form-control bg-dark text-white border-secondary" {...register("phone")} />
-                        {errors.phone && <small className="text-danger">{errors.phone.message}</small>}
-                      </div>
-                      <div className="col-md-6">
-                        <label className="form-label small text-secondary">Vehicle Type</label>
-                        <input className="form-control bg-dark text-white border-secondary" {...register("vehicleType")} placeholder="Truck, Van, etc." />
-                        {errors.vehicleType && <small className="text-danger">{errors.vehicleType.message}</small>}
-                      </div>
-                      <div className="col-md-6">
-                        <label className="form-label small text-secondary">License Plate</label>
-                        <input className="form-control bg-dark text-white border-secondary" {...register("vehiclePlate")} />
-                        {errors.vehiclePlate && <small className="text-danger">{errors.vehiclePlate.message}</small>}
-                      </div>
-                      <div className="col-12">
-                        <label className="form-label small text-secondary">Duty Status</label>
-                        <select className="form-select bg-dark text-white border-secondary" {...register("status")}>
-                          <option value="Available">Available</option>
-                          <option value="On Delivery">On Delivery</option>
-                          <option value="Offline">Offline</option>
-                        </select>
-                      </div>
+        <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content shadow-lg" style={{ borderRadius: "20px", border: "1px solid #dce5f0" }}>
+              <form onSubmit={handleSubmit(onSubmit)}>
+                <div className="modal-header" style={{ borderBottom: "1px solid #eef3f8" }}>
+                  <h5 className="modal-title fw-bold" style={{ color: "#10233f" }}>
+                    {editingPerson ? "Edit Profile" : "New Fleet Member"}
+                  </h5>
+                  <button type="button" className="btn-close" onClick={() => setShowModal(false)} />
+                </div>
+                <div className="modal-body p-4">
+                  <div className="row g-3">
+                    <div className="col-12">
+                      <label className="form-label small fw-semibold text-muted">Full Name</label>
+                      <input className="form-control marwat-input" {...register("name")} placeholder="Full Name" />
+                      {errors.name && <small className="text-danger">{errors.name.message}</small>}
+                    </div>
+                    <div className="col-md-6">
+                      <label className="form-label small fw-semibold text-muted">Email</label>
+                      <input className="form-control marwat-input" {...register("email")} />
+                      {errors.email && <small className="text-danger">{errors.email.message}</small>}
+                    </div>
+                    <div className="col-md-6">
+                      <label className="form-label small fw-semibold text-muted">Phone</label>
+                      <input className="form-control marwat-input" {...register("phone")} />
+                      {errors.phone && <small className="text-danger">{errors.phone.message}</small>}
+                    </div>
+                    <div className="col-md-6">
+                      <label className="form-label small fw-semibold text-muted">Vehicle Type</label>
+                      <input className="form-control marwat-input" {...register("vehicleType")} placeholder="Truck, Van, etc." />
+                      {errors.vehicleType && <small className="text-danger">{errors.vehicleType.message}</small>}
+                    </div>
+                    <div className="col-md-6">
+                      <label className="form-label small fw-semibold text-muted">License Plate</label>
+                      <input className="form-control marwat-input" {...register("vehiclePlate")} />
+                      {errors.vehiclePlate && <small className="text-danger">{errors.vehiclePlate.message}</small>}
+                    </div>
+                    <div className="col-12">
+                      <label className="form-label small fw-semibold text-muted">Duty Status</label>
+                      <select className="form-select marwat-input" {...register("status")}>
+                        <option value="Available">Available</option>
+                        <option value="On Delivery">On Delivery</option>
+                        <option value="Offline">Offline</option>
+                      </select>
                     </div>
                   </div>
-                  <div className="modal-footer border-secondary">
-                    <button type="button" className="btn btn-outline-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-                    <button type="submit" className="btn btn-primary px-4">{editingPerson ? "Update Member" : "Add to Fleet"}</button>
-                  </div>
-                </form>
-              </div>
+                </div>
+                <div className="modal-footer" style={{ borderTop: "1px solid #eef3f8" }}>
+                  <button type="button" className="btn btn-outline-secondary" onClick={() => setShowModal(false)}>Cancel</button>
+                  <button type="submit" className="btn btn-primary px-4">{editingPerson ? "Update Member" : "Add to Fleet"}</button>
+                </div>
+              </form>
             </div>
           </div>
-        </>
+        </div>
       )}
     </div>
   );

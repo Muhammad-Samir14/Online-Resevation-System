@@ -89,16 +89,6 @@ function Navbar() {
                 Login
               </Link>
             </li>
-
-            <li className="nav-item mx-lg-2 my-2 my-lg-0">
-              <Link
-                to="/admin"
-                onClick={handleLinkClick}
-                className="btn btn-danger fw-semibold px-4"
-              >
-                Admin
-              </Link>
-            </li>
           </ul>
         </div>
       </div>

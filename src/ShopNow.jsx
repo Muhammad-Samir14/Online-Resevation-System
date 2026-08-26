@@ -7,8 +7,8 @@ function ShopNow() {
     title: "Marwat LPG Shop",
     description:
       "Browse domestic, commercial and industrial LPG cylinders and accessories.",
-    accent: "#198754",
-    button: "View Shop",
+    accent: "#0d6efd",
+    button: "Shop Cylinders",
     path: "/services",
   },
   {
@@ -16,7 +16,7 @@ function ShopNow() {
     title: "LPG Refill",
     description:
       "Book a safe and convenient cylinder refill with doorstep delivery.",
-    accent: "#dc3545",
+    accent: "#0d6efd",
     button: "Book Refill",
     path: "/book-gas?service=refill",
   },
@@ -25,7 +25,7 @@ function ShopNow() {
     title: "Bulk Deliveries",
     description:
       "Reliable LPG supply solutions for restaurants, shops and businesses.",
-    accent: "#f0ad00",
+    accent: "#0d6efd",
     button: "Order Bulk",
     path: "/book-gas?service=bulk",
   },

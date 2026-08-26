@@ -1,12 +1,19 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import axios from "axios";
+import { supabase } from "./supabaseClient";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+
+const PRICE_MAP = {
+  "6 Kg": 1650,
+  "15 Kg": 4500,
+  "45 Kg": 9200,
+};
 
 function BookGasPage() {
   const [searchParams] = useSearchParams();
   const [formData, setFormData] = useState({
+    orderType: "Domestic",
     fullName: "",
     email: "",
     phoneNumber: "",
@@ -29,22 +36,41 @@ function BookGasPage() {
   const [paymentScreenshot, setPaymentScreenshot] = useState(null);
 
   useEffect(() => {
+    const service = searchParams.get("service");
+    const paramType = searchParams.get("type");
+    const paramSize = searchParams.get("size");
+    const paramQuantity = searchParams.get("quantity");
     const savedUser = localStorage.getItem("user");
 
+    let parsedUser = null;
     if (savedUser) {
       try {
-        const parsedUser = JSON.parse(savedUser);
-
-        setFormData((prev) => ({
-          ...prev,
-          fullName: parsedUser.name || parsedUser.fullName || "",
-          email: parsedUser.email || "",
-          phoneNumber: parsedUser.phoneNumber || "",
-        }));
+        parsedUser = JSON.parse(savedUser);
       } catch (error) {
         console.error("Could not read saved user:", error);
       }
     }
+
+    setFormData((prev) => ({
+      ...prev,
+      fullName: parsedUser?.name || parsedUser?.fullName || "",
+      email: parsedUser?.email || "",
+      phoneNumber: parsedUser?.phoneNumber || "",
+      orderType:
+        service === "refill"
+          ? "Refill"
+          : service === "bulk"
+          ? "Bulk"
+          : "Domestic",
+      quantity:
+        service === "bulk"
+          ? 5
+          : paramQuantity
+          ? parseInt(paramQuantity, 10) || 1
+          : 1,
+      cylinderType: paramType || prev.cylinderType,
+      cylinderSize: paramSize || prev.cylinderSize,
+    }));
   }, []);
 
   const handleInputChange = (e) => {
@@ -55,6 +81,16 @@ function BookGasPage() {
       [name]: value,
     }));
   };
+
+  const changeQuantity = (amount) => {
+    setFormData((prev) => ({
+      ...prev,
+      quantity: Math.max(1, prev.quantity + amount),
+    }));
+  };
+
+  const unitPrice = PRICE_MAP[formData.cylinderSize] || 0;
+  const totalPrice = unitPrice * formData.quantity;
 
   const isOnlinePayment =
     formData.paymentMethod === "JazzCash" ||
@@ -82,38 +118,40 @@ function BookGasPage() {
     e.preventDefault();
 
     try {
-      const token = localStorage.getItem("token");
-
-      /*
-        Payment screenshot will be connected properly
-        when we set up Supabase Storage.
-
-        For now we send normal booking/payment fields.
-      */
-
-      const submissionData = {
-        ...formData,
-        paymentScreenshotName: paymentScreenshot?.name || null,
-      };
-
-      const response = await axios.post(
-        "http://localhost:5000/api/bookings/create",
-        submissionData,
+      const { data, error } = await supabase.from("bookings").insert([
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+          order_type: formData.orderType,
+          full_name: formData.fullName,
+          email: formData.email,
+          phone_number: formData.phoneNumber,
+          cylinder_type: formData.cylinderType,
+          cylinder_size: formData.cylinderSize,
+          quantity: formData.quantity,
+          unit_price: unitPrice,
+          total_price: totalPrice,
+          delivery_time_slot: formData.deliveryTimeSlot,
+          street_address: formData.streetAddress,
+          landmark: formData.landmark,
+          payment_method: formData.paymentMethod,
+          sender_name: formData.senderName,
+          sender_number: formData.senderNumber,
+          amount_sent: formData.amountSent ? parseFloat(formData.amountSent) : null,
+          transaction_id: formData.transactionId,
+          payment_screenshot_name: paymentScreenshot?.name || null,
+          additional_notes: formData.additionalNotes,
+          status: "Pending",
+        },
+      ]);
+
+      if (error) throw error;
 
       alert("Booking confirmed successfully!");
-      console.log("Booking Response:", response.data);
+      console.log("Booking Response:", data);
     } catch (error) {
       console.error(error);
-
       alert(
-        error.response?.data?.message ||
-          "Backend is not connected yet. Your form UI is working correctly."
+        error.message ||
+          "Could not submit booking. Please try again."
       );
     }
   };
@@ -281,14 +319,47 @@ function BookGasPage() {
                           Quantity
                         </label>
 
-                        <input
-                          type="number"
-                          min="1"
-                          name="quantity"
-                          className="form-control marwat-input"
-                          value={formData.quantity}
-                          onChange={handleInputChange}
-                        />
+                        <div
+                          className="d-flex align-items-center justify-content-between p-2 rounded-3"
+                          style={{
+                            background: "#f5f8fc",
+                            border: "1px solid #dce5f0",
+                            minHeight: "48px",
+                          }}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => changeQuantity(-1)}
+                            className="btn btn-outline-secondary d-flex align-items-center justify-content-center"
+                            style={{
+                              width: "38px",
+                              height: "38px",
+                              borderRadius: "50%",
+                            }}
+                          >
+                            <i className="bi bi-dash-lg"></i>
+                          </button>
+
+                          <strong
+                            className="fs-5 text-center"
+                            style={{ minWidth: "25px" }}
+                          >
+                            {formData.quantity}
+                          </strong>
+
+                          <button
+                            type="button"
+                            onClick={() => changeQuantity(1)}
+                            className="btn btn-primary d-flex align-items-center justify-content-center"
+                            style={{
+                              width: "38px",
+                              height: "38px",
+                              borderRadius: "50%",
+                            }}
+                          >
+                            <i className="bi bi-plus-lg"></i>
+                          </button>
+                        </div>
                       </div>
 
                       <div className="col-md-6">
@@ -307,6 +378,25 @@ function BookGasPage() {
                           <option>Evening (4 PM - 8 PM)</option>
                         </select>
                       </div>
+                    </div>
+
+                    <div
+                      className="d-flex justify-content-between align-items-center mt-3 p-3 rounded-3"
+                      style={{
+                        background: "#eef5ff",
+                        border: "1px solid #d9e6f8",
+                      }}
+                    >
+                      <span className="fw-semibold text-muted">
+                        Estimated Total
+                      </span>
+
+                      <strong
+                        className="fs-4"
+                        style={{ color: "#0d6efd" }}
+                      >
+                        Rs {totalPrice.toLocaleString()}
+                      </strong>
                     </div>
                   </div>
 
@@ -590,11 +680,27 @@ function BookGasPage() {
                 </div>
 
                 <div className="col-lg-4">
-                <div className="marwat-card p-4">
+                  <div
+                    className="marwat-card p-4"
+                    style={{ position: "sticky", top: "90px" }}
+                  >
                     <h4 className="fw-bold mb-4">
                       <i className="bi bi-receipt text-primary me-2"></i>
                       Booking Summary
                     </h4>
+
+                    <div className="mb-3">
+                      <span className="text-muted">Selected:</span>
+                      <strong className="ms-1">
+                        {formData.cylinderType} {formData.cylinderSize}
+                      </strong>
+                    </div>
+
+                    <div className="d-flex justify-content-between mb-3">
+                      <span className="text-muted">Order Type</span>
+
+                      <strong>{formData.orderType}</strong>
+                    </div>
 
                     <div className="d-flex justify-content-between mb-3">
                       <span className="text-muted">Cylinder</span>
@@ -612,6 +718,23 @@ function BookGasPage() {
                       <span className="text-muted">Quantity</span>
 
                       <strong>{formData.quantity}</strong>
+                    </div>
+
+                    <div className="d-flex justify-content-between mb-3">
+                      <span className="text-muted">Unit Price</span>
+
+                      <strong>Rs {unitPrice.toLocaleString()}</strong>
+                    </div>
+
+                    <div className="d-flex justify-content-between mb-3">
+                      <span className="text-muted">Total Price</span>
+
+                      <strong
+                        className="fs-5"
+                        style={{ color: "#0d6efd" }}
+                      >
+                        Rs {totalPrice.toLocaleString()}
+                      </strong>
                     </div>
 
                     <div className="d-flex justify-content-between mb-3">

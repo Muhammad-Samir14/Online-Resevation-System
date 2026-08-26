@@ -3,7 +3,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import axios from "axios";
+import { supabase } from "../supabaseClient";
 
 const productSchema = z.object({
   name: z.string().min(2, "Name required"),
@@ -15,7 +15,7 @@ const productSchema = z.object({
 });
 
 export default function ProductManagement() {
-  const [products, setProducts] = useState([]); 
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
@@ -25,15 +25,18 @@ export default function ProductManagement() {
     defaultValues: { name: "", type: "LPG", weight: "", price: 0, stock: 0, description: "" },
   });
 
-  // 1️⃣ Fetch raw inventory list items from database directly
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://localhost:5000/api/admin/products");
-      setProducts(res.data);
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      setProducts(data || []);
       setLoading(false);
     } catch (err) {
-      console.error("Error fetching live cylinder items:", err);
+      console.error("Error fetching products:", err);
       setLoading(false);
     }
   };
@@ -61,33 +64,39 @@ export default function ProductManagement() {
     setIsModalOpen(true);
   };
 
-  // 2️⃣ Handle API Submit (POST/PUT directly to MongoDB)
   const onSubmit = async (data) => {
     const productData = { ...data, price: Number(data.price), stock: Number(data.stock) };
     try {
       if (editingProduct) {
-        // Update Action
-        const res = await axios.put(`http://localhost:5000/api/admin/products/${editingProduct._id}`, productData);
-        setProducts(products.map((p) => (p._id === editingProduct._id ? res.data : p)));
+        const { data: updated, error } = await supabase
+          .from("products")
+          .update(productData)
+          .eq("id", editingProduct.id)
+          .select();
+        if (error) throw error;
+        setProducts(products.map((p) => (p.id === editingProduct.id ? updated[0] : p)));
       } else {
-        // Create Action
-        const res = await axios.post("http://localhost:5000/api/admin/products", productData);
-        setProducts([...products, res.data]);
+        const { data: created, error } = await supabase
+          .from("products")
+          .insert([productData])
+          .select();
+        if (error) throw error;
+        setProducts([...products, created[0]]);
       }
       setIsModalOpen(false);
     } catch (err) {
-      alert(err.response?.data?.message || "Error processing inventory modification data");
+      alert(err.message || "Error processing inventory modification data");
     }
   };
 
-  // 3️⃣ Delete Item Entry from Inventory Database
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to remove this product from inventory?")) {
       try {
-        await axios.delete(`http://localhost:5000/api/admin/products/${id}`);
-        setProducts(products.filter((p) => p._id !== id));
+        const { error } = await supabase.from("products").delete().eq("id", id);
+        if (error) throw error;
+        setProducts(products.filter((p) => p.id !== id));
       } catch (err) {
-        alert("Failed to delete stock registration profile from backend server.");
+        alert("Failed to delete product from backend server.");
       }
     }
   };
@@ -95,9 +104,9 @@ export default function ProductManagement() {
   const formatPrice = (v) => `Rs. ${Number(v).toLocaleString()}`;
 
   const getStockBadge = (stock) => {
-    if (stock <= 5) return "text-danger border-danger";
-    if (stock <= 15) return "text-warning border-warning";
-    return "text-success border-success";
+    if (stock <= 5) return { color: "#dc3545", bg: "rgba(220, 53, 69, 0.1)" };
+    if (stock <= 15) return { color: "#e5aa00", bg: "rgba(255, 193, 7, 0.1)" };
+    return { color: "#198754", bg: "rgba(25, 135, 84, 0.1)" };
   };
 
   if (loading) {
@@ -109,116 +118,151 @@ export default function ProductManagement() {
   }
 
   return (
-    <div className="animate__animated animate__fadeIn text-white">
-      {/* Header Card */}
-      <div className="d-flex justify-content-between align-items-center mb-4 bg-dark p-4 rounded-4 shadow-lg border border-secondary">
+    <div>
+      <div
+        className="d-flex justify-content-between align-items-center mb-4 p-4 rounded-4 shadow-sm"
+        style={{ background: "#fff", border: "1px solid #dce5f0" }}
+      >
         <div>
-          <h3 className="fw-bold text-primary mb-1">Cylinder Catalog</h3>
-          <p className="text-secondary small mb-0">Manage LPG sizes, weights, structural prices, and stock units</p>
+          <h3 className="fw-bold mb-1" style={{ color: "#10233f" }}>
+            <i className="bi bi-box-seam text-primary me-2"></i>
+            Cylinder Catalog
+          </h3>
+          <p className="text-muted small mb-0">Manage LPG sizes, weights, prices, and stock units</p>
         </div>
-        <button className="btn btn-primary px-4 fw-bold" onClick={handleCreate} style={{ borderRadius: "10px" }}>
-          + Add New Product
+        <button
+          className="btn btn-primary px-4 fw-bold"
+          onClick={handleCreate}
+          style={{ borderRadius: "10px" }}
+        >
+          <i className="bi bi-plus-lg me-1"></i>
+          Add New Product
         </button>
       </div>
 
-      {/* Modern Catalog Table */}
-      <div className="card bg-dark border-secondary shadow-lg overflow-hidden" style={{ borderRadius: "20px" }}>
-        <table className="table table-dark table-hover mb-0 align-middle">
-          <thead className="text-secondary small text-uppercase bg-black bg-opacity-25">
-            <tr className="border-bottom border-secondary">
-              <th className="ps-4 py-3">Product Profile</th>
-              <th className="py-3">Specifications</th>
-              <th className="py-3 text-center">Unit Price</th>
-              <th className="py-3 text-center">Stock Level</th>
-              <th className="pe-4 py-3 text-end">Actions</th>
+      <div
+        className="card shadow-sm overflow-hidden"
+        style={{ borderRadius: "16px", border: "1px solid #dce5f0" }}
+      >
+        <table className="table table-hover mb-0 align-middle">
+          <thead style={{ background: "#eef5ff" }}>
+            <tr style={{ borderBottom: "2px solid #d9e6f8" }}>
+              <th className="ps-4 py-3 text-uppercase fw-bold small" style={{ color: "#6c757d" }}>Product</th>
+              <th className="py-3 text-uppercase fw-bold small" style={{ color: "#6c757d" }}>Specifications</th>
+              <th className="py-3 text-center text-uppercase fw-bold small" style={{ color: "#6c757d" }}>Unit Price</th>
+              <th className="py-3 text-center text-uppercase fw-bold small" style={{ color: "#6c757d" }}>Stock</th>
+              <th className="pe-4 py-3 text-end text-uppercase fw-bold small" style={{ color: "#6c757d" }}>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {products.map((p) => (
-              <tr key={p._id} className="border-bottom border-secondary transition-all">
-                <td className="ps-4">
-                  <div className="fw-bold text-white">{p.name}</div>
-                  <small className="text-secondary opacity-75">{p.description || "No description item added."}</small>
-                </td>
-                <td>
-                  <span className="badge bg-secondary bg-opacity-25 border border-secondary text-light px-2 py-1 me-2">{p.type}</span>
-                  <span className="text-info small fw-bold">{p.weight}</span>
-                </td>
-                <td className="text-center fw-bold text-white">
-                  {formatPrice(p.price)}
-                </td>
-                <td className="text-center">
-                  <span className={`badge border rounded-pill px-3 py-2 ${getStockBadge(p.stock)}`} style={{ backgroundColor: "rgba(255,255,255,0.02)" }}>
-                    {p.stock} Units Available
-                  </span>
-                </td>
-                <td className="pe-4 text-end">
-                  <button className="btn btn-outline-warning btn-sm border-0 me-1 p-2" onClick={() => handleEdit(p)} title="Edit Configuration">
-                    ✏️
-                  </button>
-                  <button className="btn btn-outline-danger btn-sm border-0 p-2" onClick={() => handleDelete(p._id)} title="Remove Product">
-                    🗑️
-                  </button>
+            {products.length === 0 ? (
+              <tr>
+                <td colSpan="5" className="text-center py-4 text-muted">
+                  No products in the catalog yet.
                 </td>
               </tr>
-            ))}
+            ) : (
+              products.map((p) => {
+                const badge = getStockBadge(p.stock);
+                return (
+                  <tr key={p.id} className="border-top" style={{ borderColor: "#eef3f8" }}>
+                    <td className="ps-4">
+                      <div className="fw-bold" style={{ color: "#10233f" }}>{p.name}</div>
+                      <small className="text-muted">{p.description || "No description added."}</small>
+                    </td>
+                    <td>
+                      <span className="badge bg-primary-subtle text-primary me-2">{p.type}</span>
+                      <span className="small fw-bold" style={{ color: "#0d6efd" }}>{p.weight}</span>
+                    </td>
+                    <td className="text-center fw-bold" style={{ color: "#10233f" }}>
+                      {formatPrice(p.price)}
+                    </td>
+                    <td className="text-center">
+                      <span
+                        className="badge rounded-pill px-3 py-2 border"
+                        style={{ backgroundColor: badge.bg, color: badge.color, borderColor: badge.color }}
+                      >
+                        {p.stock} Units
+                      </span>
+                    </td>
+                    <td className="pe-4 text-end">
+                      <button
+                        className="btn btn-sm me-1"
+                        style={{ background: "#fff8dd", color: "#e5aa00", border: "1px solid #ffe38c" }}
+                        onClick={() => handleEdit(p)}
+                        title="Edit"
+                      >
+                        <i className="bi bi-pencil-fill"></i>
+                      </button>
+                      <button
+                        className="btn btn-sm"
+                        style={{ background: "#fde8e8", color: "#dc3545", border: "1px solid #f5c2c7" }}
+                        onClick={() => handleDelete(p.id)}
+                        title="Remove"
+                      >
+                        <i className="bi bi-trash-fill"></i>
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>
 
-      {/* Modal View */}
       {isModalOpen && (
-        <>
-          <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: "rgba(0,0,0,0.85)" }}>
-            <div className="modal-dialog modal-dialog-centered">
-              <div className="modal-content bg-dark text-white border-secondary shadow-lg" style={{ borderRadius: "20px" }}>
-                <form onSubmit={handleSubmit(onSubmit)}>
-                  <div className="modal-header border-secondary">
-                    <h5 className="modal-title fw-bold text-primary">{editingProduct ? "Modify Product Rules" : "Register Catalog Item"}</h5>
-                    <button type="button" className="btn-close btn-close-white" onClick={() => setIsModalOpen(false)} />
-                  </div>
-                  <div className="modal-body p-4">
-                    <div className="row g-3">
-                      <div className="col-12">
-                        <label className="form-label small text-white">Product Name</label>
-                        <input className="form-control bg-dark text-white border-secondary" {...register("name")} placeholder="e.g. Domestic Cylinder" />
-                        {errors.name && <small className="text-danger">{errors.name.message}</small>}
-                      </div>
-                      <div className="col-md-6">
-                        <label className="form-label small text-white">Fuel Classification Type</label>
-                        <input className="form-control bg-dark text-white border-secondary" {...register("type")} />
-                        {errors.type && <small className="text-danger">{errors.type.message}</small>}
-                      </div>
-                      <div className="col-md-6">
-                        <label className="form-label small text-white">Weight Spec (e.g. 11.8 kg)</label>
-                        <input className="form-control bg-dark text-white border-secondary" {...register("weight")} />
-                        {errors.weight && <small className="text-danger">{errors.weight.message}</small>}
-                      </div>
-                      <div className="col-md-6">
-                        <label className="form-label small text-white">Price (Rs.)</label>
-                        <input type="number" className="form-control bg-dark text-white border-secondary" {...register("price", { valueAsNumber: true })} />
-                        {errors.price && <small className="text-danger">{errors.price.message}</small>}
-                      </div>
-                      <div className="col-md-6">
-                        <label className="form-label small text-white">Initial Stock Units</label>
-                        <input type="number" className="form-control bg-dark text-white border-secondary" {...register("stock", { valueAsNumber: true })} />
-                        {errors.stock && <small className="text-danger">{errors.stock.message}</small>}
-                      </div>
-                      <div className="col-12">
-                        <label className="form-label small text-white">Catalog Description</label>
-                        <textarea rows="2" className="form-control bg-dark text-white border-secondary" {...register("description")} placeholder="Add detailed product description items..." />
-                      </div>
+        <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content shadow-lg" style={{ borderRadius: "20px", border: "1px solid #dce5f0" }}>
+              <form onSubmit={handleSubmit(onSubmit)}>
+                <div className="modal-header" style={{ borderBottom: "1px solid #eef3f8" }}>
+                  <h5 className="modal-title fw-bold" style={{ color: "#10233f" }}>
+                    {editingProduct ? "Modify Product" : "Register Catalog Item"}
+                  </h5>
+                  <button type="button" className="btn-close" onClick={() => setIsModalOpen(false)} />
+                </div>
+                <div className="modal-body p-4">
+                  <div className="row g-3">
+                    <div className="col-12">
+                      <label className="form-label small fw-semibold text-muted">Product Name</label>
+                      <input className="form-control marwat-input" {...register("name")} placeholder="e.g. Domestic Cylinder" />
+                      {errors.name && <small className="text-danger">{errors.name.message}</small>}
+                    </div>
+                    <div className="col-md-6">
+                      <label className="form-label small fw-semibold text-muted">Type</label>
+                      <input className="form-control marwat-input" {...register("type")} />
+                      {errors.type && <small className="text-danger">{errors.type.message}</small>}
+                    </div>
+                    <div className="col-md-6">
+                      <label className="form-label small fw-semibold text-muted">Weight (e.g. 11.8 kg)</label>
+                      <input className="form-control marwat-input" {...register("weight")} />
+                      {errors.weight && <small className="text-danger">{errors.weight.message}</small>}
+                    </div>
+                    <div className="col-md-6">
+                      <label className="form-label small fw-semibold text-muted">Price (Rs.)</label>
+                      <input type="number" className="form-control marwat-input" {...register("price", { valueAsNumber: true })} />
+                      {errors.price && <small className="text-danger">{errors.price.message}</small>}
+                    </div>
+                    <div className="col-md-6">
+                      <label className="form-label small fw-semibold text-muted">Stock Units</label>
+                      <input type="number" className="form-control marwat-input" {...register("stock", { valueAsNumber: true })} />
+                      {errors.stock && <small className="text-danger">{errors.stock.message}</small>}
+                    </div>
+                    <div className="col-12">
+                      <label className="form-label small fw-semibold text-muted">Description</label>
+                      <textarea rows="2" className="form-control marwat-input" {...register("description")} placeholder="Add product description..." />
                     </div>
                   </div>
-                  <div className="modal-footer border-secondary">
-                    <button type="button" className="btn btn-outline-secondary px-4" onClick={() => setIsModalOpen(false)}>Cancel</button>
-                    <button type="submit" className="btn btn-primary px-4">{editingProduct ? "Save Changes" : "Register Product"}</button>
-                  </div>
-                </form>
-              </div>
+                </div>
+                <div className="modal-footer" style={{ borderTop: "1px solid #eef3f8" }}>
+                  <button type="button" className="btn btn-outline-secondary px-4" onClick={() => setIsModalOpen(false)}>Cancel</button>
+                  <button type="submit" className="btn btn-primary px-4">{editingProduct ? "Save Changes" : "Register Product"}</button>
+                </div>
+              </form>
             </div>
           </div>
-        </>
+        </div>
       )}
     </div>
   );

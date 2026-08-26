@@ -73,12 +73,42 @@ function AboutUs() {
                     ["bi-headset", "Customer Support"],
                   ].map(([icon, title]) => (
                     <div className="col-6" key={title}>
-                      <div className="marwat-card text-center p-4">
-                        <i
-                          className={`bi ${icon} fs-2 text-primary`}
-                        ></i>
+                      <div
+                        className="text-center p-4 h-100 rounded-4"
+                        style={{
+                          background: "#eef5ff",
+                          border: "1px solid #d9e6f8",
+                          transition:
+                            "transform 0.25s ease, box-shadow 0.25s ease",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform =
+                            "translateY(-5px)";
+                          e.currentTarget.style.boxShadow =
+                            "0 18px 40px rgba(13, 110, 253, 0.15)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = "translateY(0)";
+                          e.currentTarget.style.boxShadow = "none";
+                        }}
+                      >
+                        <div
+                          className="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
+                          style={{
+                            width: "56px",
+                            height: "56px",
+                            background: "#0d6efd",
+                          }}
+                        >
+                          <i
+                            className={`bi ${icon} fs-3 text-white`}
+                          ></i>
+                        </div>
 
-                        <h5 className="fw-bold mt-3 mb-0">
+                        <h5
+                          className="fw-bold mt-2 mb-0"
+                          style={{ color: "#10233f" }}
+                        >
                           {title}
                         </h5>
                       </div>

@@ -3,6 +3,7 @@ import { createBrowserRouter } from "react-router-dom";
 import LandingPage from "./LandingPage";
 import RegisterandLoginPage from "./RegisterandLoginPage";
 import AdminLayout from "./pages/AdminLayout";
+import AdminLoginPage from "./pages/AdminLoginPage";
 
 import ShopPage from "./ShopPage";
 import ShopNow from "./ShopNow";
@@ -64,6 +65,11 @@ const route = createBrowserRouter([
   {
     path: "/book-gas",
     element: <BookGasPage />,
+  },
+
+  {
+    path: "/admin-login",
+    element: <AdminLoginPage />,
   },
 
   {
