@@ -19,6 +19,10 @@ export default function OrdersManagement() {
   const [orders, setOrders] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState(null);
+  const [trackingOrder, setTrackingOrder] = useState(null);
+  const [etaMinutes, setEtaMinutes] = useState(30);
+  const [trackStatus, setTrackStatus] = useState("Pending");
+  const [savingTrack, setSavingTrack] = useState(false);
 
   const { register, handleSubmit, reset } = useForm({
     resolver: zodResolver(orderSchema),
@@ -29,19 +33,20 @@ export default function OrdersManagement() {
     },
   });
 
+  const fetchOrders = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      setOrders(data || []);
+    } catch (err) {
+      console.error("Error fetching orders:", err);
+    }
+  };
+
   useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("orders")
-          .select("*")
-          .order("created_at", { ascending: false });
-        if (error) throw error;
-        setOrders(data || []);
-      } catch (err) {
-        console.error("Error fetching orders:", err);
-      }
-    };
     fetchOrders();
   }, []);
 
@@ -64,6 +69,35 @@ export default function OrdersManagement() {
     } catch (err) {
       console.error("Error saving order:", err);
       alert(err.message || "Error saving order");
+    }
+  };
+
+  const openTrackingModal = (order) => {
+    setTrackingOrder(order);
+    setEtaMinutes(order.estimated_delivery_minutes || 30);
+    setTrackStatus(order.status || "Pending");
+  };
+
+  const saveTracking = async () => {
+    if (!trackingOrder) return;
+    setSavingTrack(true);
+    try {
+      const { data, error } = await supabase
+        .from("orders")
+        .update({
+          status: trackStatus,
+          estimated_delivery_minutes: etaMinutes,
+          eta_set_at: new Date().toISOString(),
+        })
+        .eq("id", trackingOrder.id)
+        .select();
+      if (error) throw error;
+      setOrders(orders.map((o) => (o.id === trackingOrder.id ? data[0] : o)));
+      setTrackingOrder(null);
+    } catch (err) {
+      alert(err.message || "Error updating tracking info");
+    } finally {
+      setSavingTrack(false);
     }
   };
 
@@ -113,12 +147,14 @@ export default function OrdersManagement() {
               <th className="py-3 text-uppercase fw-bold small" style={{ color: "#6c757d" }}>Product</th>
               <th className="py-3 text-center text-uppercase fw-bold small" style={{ color: "#6c757d" }}>Amount</th>
               <th className="py-3 text-center text-uppercase fw-bold small" style={{ color: "#6c757d" }}>Status</th>
+              <th className="py-3 text-center text-uppercase fw-bold small" style={{ color: "#6c757d" }}>ETA</th>
+              <th className="pe-4 py-3 text-end text-uppercase fw-bold small" style={{ color: "#6c757d" }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {orders.length === 0 ? (
               <tr>
-                <td colSpan="4" className="text-center py-4 text-muted">
+                <td colSpan="6" className="text-center py-4 text-muted">
                   No orders found.
                 </td>
               </tr>
@@ -141,6 +177,26 @@ export default function OrdersManagement() {
                         {order.status}
                       </span>
                     </td>
+                    <td className="text-center">
+                      {order.estimated_delivery_minutes ? (
+                        <span className="fw-semibold" style={{ color: "#0d6efd" }}>
+                          {order.estimated_delivery_minutes} min
+                        </span>
+                      ) : (
+                        <span className="text-muted small">Not set</span>
+                      )}
+                    </td>
+                    <td className="pe-4 text-end">
+                      <button
+                        className="btn btn-sm"
+                        style={{ background: "#eef5ff", color: "#0d6efd", border: "1px solid #cfe0f5" }}
+                        onClick={() => openTrackingModal(order)}
+                        title="Set tracking info"
+                      >
+                        <i className="bi bi-stopwatch me-1"></i>
+                        Set ETA
+                      </button>
+                    </td>
                   </tr>
                 );
               })
@@ -149,6 +205,7 @@ export default function OrdersManagement() {
         </table>
       </div>
 
+      {/* Create order modal */}
       {isModalOpen && (
         <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
           <div className="modal-dialog modal-dialog-centered">
@@ -200,6 +257,77 @@ export default function OrdersManagement() {
                   <button type="submit" className="btn btn-primary px-4">Save Order</button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tracking / ETA modal */}
+      {trackingOrder && (
+        <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content shadow-lg" style={{ borderRadius: "20px", border: "1px solid #dce5f0" }}>
+              <div className="modal-header" style={{ borderBottom: "1px solid #eef3f8" }}>
+                <h5 className="modal-title fw-bold" style={{ color: "#10233f" }}>
+                  <i className="bi bi-stopwatch me-2 text-primary"></i>
+                  Set Tracking Info
+                </h5>
+                <button type="button" className="btn-close" onClick={() => setTrackingOrder(null)} />
+              </div>
+              <div className="modal-body p-4">
+                <div className="mb-4">
+                  <div className="fw-bold mb-1" style={{ color: "#10233f" }}>{trackingOrder.customerName}</div>
+                  <small className="text-muted">{trackingOrder.product} — {formatCurrency(trackingOrder.totalAmount)}</small>
+                </div>
+
+                <label className="form-label small fw-semibold text-muted">Order Status</label>
+                <select
+                  className="form-select marwat-input mb-4"
+                  value={trackStatus}
+                  onChange={(e) => setTrackStatus(e.target.value)}
+                >
+                  <option value="Pending">Pending</option>
+                  <option value="Processing">Processing</option>
+                  <option value="Out for Delivery">Out for Delivery</option>
+                  <option value="Delivered">Delivered</option>
+                  <option value="Cancelled">Cancelled</option>
+                </select>
+
+                <label className="form-label small fw-semibold text-muted">Estimated Delivery Time (minutes)</label>
+                <div className="d-flex gap-2 mb-3 flex-wrap">
+                  {[30, 45, 60].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      className="btn"
+                      style={{
+                        borderRadius: "10px",
+                        fontWeight: 600,
+                        background: etaMinutes === preset ? "#0d6efd" : "#eef5ff",
+                        color: etaMinutes === preset ? "#fff" : "#0d6efd",
+                        border: "1px solid #cfe0f5",
+                      }}
+                      onClick={() => setEtaMinutes(preset)}
+                    >
+                      {preset} min
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="number"
+                  min="1"
+                  className="form-control marwat-input"
+                  value={etaMinutes}
+                  onChange={(e) => setEtaMinutes(Math.max(1, Number(e.target.value) || 1))}
+                />
+                <small className="text-muted">The customer's countdown timer will restart from this value when you save.</small>
+              </div>
+              <div className="modal-footer" style={{ borderTop: "1px solid #eef3f8" }}>
+                <button type="button" className="btn btn-outline-secondary px-4" onClick={() => setTrackingOrder(null)}>Cancel</button>
+                <button type="button" className="btn btn-primary px-4" disabled={savingTrack} onClick={saveTracking}>
+                  {savingTrack ? "Saving..." : "Save Tracking Info"}
+                </button>
+              </div>
             </div>
           </div>
         </div>

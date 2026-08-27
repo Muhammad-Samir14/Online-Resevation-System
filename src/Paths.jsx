@@ -8,6 +8,7 @@ import AdminLoginPage from "./pages/AdminLoginPage";
 import ShopPage from "./ShopPage";
 import ShopNow from "./ShopNow";
 import BookGasPage from "./BookGasPage";
+import TrackOrderPage from "./TrackOrderPage";
 
 import AboutUs from "./AboutUs";
 import Contact from "./Contact";
@@ -65,6 +66,11 @@ const route = createBrowserRouter([
   {
     path: "/book-gas",
     element: <BookGasPage />,
+  },
+
+  {
+    path: "/track-order",
+    element: <TrackOrderPage />,
   },
 
   {

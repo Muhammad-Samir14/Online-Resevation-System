@@ -1,9 +1,21 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import pic1 from "./assets/pic1.jpg";
 import pic3 from "./assets/pic3.jpg";
 import image3 from "./assets/image3.jpg";
+import { supabase } from "./supabaseClient";
 
 function HeroCarousel() {
+  const navigate = useNavigate();
+
+  const handleTrackOrder = async () => {
+    const { data: authData } = await supabase.auth.getUser();
+    if (authData?.user) {
+      navigate("/track-order");
+    } else {
+      navigate("/login");
+    }
+  };
+
   const slides = [
     {
       image: pic1,
@@ -18,15 +30,16 @@ function HeroCarousel() {
       title: "Fast and Reliable Delivery",
       text: "We deliver gas cylinders safely to your doorstep.",
       buttonText: "Track Order",
-      buttonLink: "/login",
+      buttonLink: "#",
       buttonClass: "btn btn-primary fw-semibold px-4",
+      onClick: handleTrackOrder,
     },
     {
       image: image3,
       title: "Safe and Convenient",
       text: "Enjoy dependable service and easy online booking.",
       buttonText: "Learn More",
-      buttonLink: "#",
+      buttonLink: "/about",
       buttonClass: "btn btn-light fw-semibold px-4",
     },
   ];
@@ -92,9 +105,19 @@ function HeroCarousel() {
               <p className="lead mb-4" style={captionStyle}>
                 {slide.text}
               </p>
-              <Link to={slide.buttonLink} className={slide.buttonClass}>
-                {slide.buttonText}
-              </Link>
+              {slide.onClick ? (
+                <button
+                  type="button"
+                  className={slide.buttonClass}
+                  onClick={slide.onClick}
+                >
+                  {slide.buttonText}
+                </button>
+              ) : (
+                <Link to={slide.buttonLink} className={slide.buttonClass}>
+                  {slide.buttonText}
+                </Link>
+              )}
             </div>
           </div>
         ))}

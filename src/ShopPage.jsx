@@ -7,6 +7,7 @@ import Footer from "./Footer";
 import sixKgImg from "./assets/6KG.jpg";
 import fifteenKgImg from "./assets/15KG.jpg";
 import fortyFiveKgImg from "./assets/45KG.jpg";
+import regulatorImg from "./assets/Screenshot_2026-08-27_162826.png";
 
 function ShopPage() {
   const navigate = useNavigate();
@@ -46,6 +47,7 @@ function ShopPage() {
     Commercial: 1,
     Industrial: 1,
   });
+  const [pipeFeet, setPipeFeet] = useState(1);
 
   const changeQuantity = (type, amount) => {
     setQuantities((prev) => ({
@@ -73,11 +75,18 @@ function ShopPage() {
       icon: "bi-speedometer2",
       name: "Gas Regulator",
       desc: "Reliable pressure control for safer LPG cylinder usage.",
+      price: 400,
+      image: regulatorImg,
+      imageAlt: "Gas regulator",
     },
     {
       icon: "bi-bezier2",
       name: "Gas Pipe",
       desc: "Durable LPG hose for secure gas connections.",
+      price: 80,
+      priceLabel: "Rs 80 / foot",
+      imageAlt: "Gas pipe placeholder",
+      isPipe: true,
     },
     {
       icon: "bi-fire",
@@ -356,27 +365,83 @@ function ShopPage() {
                         "0 12px 30px rgba(16,35,63,.15)",
                     }}
                   >
-                    <div
-                      className="d-flex align-items-center justify-content-center rounded-circle mb-4"
-                      style={{
-                        width: "58px",
-                        height: "58px",
-                        background:
-                          "rgba(255,193,7,.12)",
-                      }}
-                    >
-                      <i
-                        className={`bi ${item.icon} fs-3 text-warning`}
-                      ></i>
-                    </div>
+                    {item.image ? (
+                      <div
+                        className="d-flex align-items-center justify-content-center rounded-3 mb-4 overflow-hidden"
+                        style={{
+                          height: "150px",
+                          background: "#f1f4f8",
+                        }}
+                      >
+                        <img
+                          src={item.image}
+                          alt={item.imageAlt}
+                          className="w-100 h-100"
+                          style={{ objectFit: "contain" }}
+                        />
+                      </div>
+                    ) : item.isPipe ? (
+                      <div
+                        className="d-flex flex-column align-items-center justify-content-center rounded-3 mb-4 text-center"
+                        style={{
+                          height: "150px",
+                          background: "#f1f4f8",
+                          color: "#5d6877",
+                          border: "1px dashed #aebed3",
+                        }}
+                      >
+                        <i className="bi bi-image fs-2 mb-2"></i>
+                        <small>Gas pipe image coming soon</small>
+                      </div>
+                    ) : (
+                      <div
+                        className="d-flex align-items-center justify-content-center rounded-circle mb-4"
+                        style={{
+                          width: "58px",
+                          height: "58px",
+                          background: "rgba(255,193,7,.12)",
+                        }}
+                      >
+                        <i
+                          className={`bi ${item.icon} fs-3 text-warning`}
+                        ></i>
+                      </div>
+                    )}
 
-                    <h5 className="fw-bold">
-                      {item.name}
-                    </h5>
+                    <h5 className="fw-bold">{item.name}</h5>
 
-                    <p className="text-white-50 mb-0">
-                      {item.desc}
-                    </p>
+                    <p className="text-white-50 mb-3">{item.desc}</p>
+
+                    {item.price ? (
+                      <strong className="d-block fs-5 text-warning">
+                        {item.priceLabel || `Rs ${item.price.toLocaleString()}`}
+                      </strong>
+                    ) : null}
+
+                    {item.isPipe && (
+                      <div className="mt-3">
+                        <label className="form-label text-white fw-semibold" htmlFor="pipe-feet">
+                          Feet
+                        </label>
+                        <input
+                          id="pipe-feet"
+                          type="number"
+                          min="1"
+                          step="1"
+                          className="form-control"
+                          value={pipeFeet}
+                          onChange={(event) =>
+                            setPipeFeet(Math.max(1, Number(event.target.value) || 1))
+                          }
+                        />
+                        <div className="d-flex justify-content-between align-items-center mt-3">
+                          <span className="text-white-50">Total</span>
+                          <strong className="fs-5 text-warning">
+                            Rs {(80 * pipeFeet).toLocaleString()}
+                          </strong>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
