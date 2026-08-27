@@ -113,7 +113,6 @@ function ShopPage() {
     Commercial: 1,
     Industrial: 1,
   });
-  const [pipeFeet, setPipeFeet] = useState(1);
   const [pipelineFeet, setPipelineFeet] = useState(1);
 
   const changeQuantity = (type, amount) => {
@@ -136,47 +135,58 @@ function ShopPage() {
     navigate(`/book-gas?${params.toString()}`);
   };
 
+  const handleBookAccessory = (item) => {
+    const quantity = item.setFeet ? item.feet : 1;
+    const unitPrice = item.numericPrice;
+    const params = new URLSearchParams({
+      type: "Accessory",
+      size: item.setFeet ? `${item.feet} ft` : "1 Unit",
+      price: unitPrice.toString(),
+      quantity: quantity.toString(),
+      product: item.name,
+    });
+
+    navigate(`/book-gas?${params.toString()}`);
+  };
+
   const accessories = [
     {
       name: "Gas Regulator",
       desc: "Reliable pressure control for safer LPG cylinder usage.",
       price: "Rs 400",
+      numericPrice: 400,
       image: regulatorImg,
       imageAlt: "Gas regulator",
       badge: "Safety Essential",
     },
     {
-      name: "Gas Pipe",
-      desc: "Durable LPG hose for secure gas connections.",
-      price: "Rs 80 / foot",
-      image: pipelineImg,
-      imageAlt: "Coiled gas pipe",
-      badge: "Flexible Length",
-      feet: pipeFeet,
-      setFeet: setPipeFeet,
-    },
-    {
-      name: "Gas Burner",
-      desc: "Practical burner accessory for LPG cylinder use.",
-      price: "Rs 500",
-      image: burnerImg,
-      imageAlt: "Gas burner",
-      badge: "Kitchen Essential",
-    },
-    {
       name: "Gas Pipeline",
       desc: "Reliable coiled pipeline for secure LPG connections.",
       price: "Rs 80 / foot",
+      numericPrice: 80,
       image: pipelineImg,
       imageAlt: "Coiled gas pipeline",
       badge: "Flexible Length",
       feet: pipelineFeet,
       setFeet: setPipelineFeet,
     },
+    {
+      name: "Gas Burner",
+      desc: "Practical burner accessory for LPG cylinder use.",
+      price: "Rs 500",
+      numericPrice: 500,
+      image: burnerImg,
+      imageAlt: "Gas burner",
+      badge: "Kitchen Essential",
+    },
   ];
 
   return (
     <>
+      <style>{`
+        .catalog-book-btn { color: #ffffff !important; }
+        .catalog-book-btn:hover { color: #ffffff !important; }
+      `}</style>
       <Navbar />
 
       <main style={{ background: "linear-gradient(180deg, #eef5ff 0%, #f7f9fc 45%, #eef3f8 100%)" }}>
@@ -235,7 +245,7 @@ function ShopPage() {
                         <span className="text-white-50">Total</span>
                         <strong className="fs-4 text-warning">Rs {total.toLocaleString()}</strong>
                       </div>
-                      <button type="button" onClick={() => handleBook(item)} className="btn marwat-primary-btn w-100 py-3 mt-auto">
+                      <button type="button" onClick={() => handleBook(item)} className="btn marwat-primary-btn catalog-book-btn w-100 py-3 mt-auto">
                         Book Now
                         <i className="bi bi-arrow-right ms-2"></i>
                       </button>
@@ -256,35 +266,43 @@ function ShopPage() {
             </div>
 
             <div className="row g-4">
-              {accessories.map((item) => (
-                <div className="col-xl-3 col-md-6" key={item.name}>
-                  <CatalogCard>
-                    <ProductImage image={item.image} alt={item.imageAlt} badge={item.badge} />
-                    <h5 className="fw-bold mb-2">{item.name}</h5>
-                    <p className="text-white-50 mb-3">{item.desc}</p>
-                    <PriceLine label="Unit Price" price={item.price} />
+              {accessories.map((item) => {
+                const total = item.setFeet ? 80 * item.feet : item.numericPrice;
+                return (
+                  <div className="col-xl-4 col-md-6" key={item.name}>
+                    <CatalogCard>
+                      <ProductImage image={item.image} alt={item.imageAlt} badge={item.badge} />
+                      <h5 className="fw-bold mb-2">{item.name}</h5>
+                      <p className="text-white-50 mb-3">{item.desc}</p>
+                      <PriceLine label="Unit Price" price={item.price} />
 
-                    {item.setFeet && (
-                      <>
-                        <label className="form-label text-white fw-semibold" htmlFor={`${item.name}-feet`}>Feet</label>
-                        <input
-                          id={`${item.name}-feet`}
-                          type="number"
-                          min="1"
-                          step="1"
-                          className="form-control"
-                          value={item.feet}
-                          onChange={(event) => item.setFeet(Math.max(1, Number(event.target.value) || 1))}
-                        />
-                        <div className="d-flex justify-content-between align-items-center mt-3 mb-4">
-                          <span className="text-white-50">Total</span>
-                          <strong className="fs-5 text-warning">Rs {(80 * item.feet).toLocaleString()}</strong>
-                        </div>
-                      </>
-                    )}
-                  </CatalogCard>
-                </div>
-              ))}
+                      {item.setFeet && (
+                        <>
+                          <label className="form-label text-white fw-semibold" htmlFor={`${item.name}-feet`}>Feet</label>
+                          <input
+                            id={`${item.name}-feet`}
+                            type="number"
+                            min="1"
+                            step="1"
+                            className="form-control"
+                            value={item.feet}
+                            onChange={(event) => item.setFeet(Math.max(1, Number(event.target.value) || 1))}
+                          />
+                        </>
+                      )}
+
+                      <div className="d-flex justify-content-between align-items-center mt-3 mb-4">
+                        <span className="text-white-50">Total</span>
+                        <strong className="fs-4 text-warning">Rs {total.toLocaleString()}</strong>
+                      </div>
+                      <button type="button" onClick={() => handleBookAccessory(item)} className="btn marwat-primary-btn catalog-book-btn w-100 py-3 mt-auto">
+                        Book Now
+                        <i className="bi bi-arrow-right ms-2"></i>
+                      </button>
+                    </CatalogCard>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </section>
