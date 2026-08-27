@@ -26,25 +26,25 @@ function Hero() {
           style={{ backgroundColor: hero.bgColor }}
         >
           <div className="container">
-            <div className="row align-items-center">
+            <div className="row align-items-center g-4">
               {/* Text Section */}
-              <div className="col-md-6">
-                <h1 className="display-5 fw-bold mb-3 text-dark">
+              <div className="col-md-6 order-1">
+                <h1 className="display-5 fw-bold mb-3 text-dark hero-title">
                   {hero.title}
                 </h1>
-                <p className="lead text-dark mb-4">{hero.desc1}</p>
-                <p className="text-dark mb-4">{hero.desc2}</p>
+                <p className="lead text-dark mb-4 hero-lead">{hero.desc1}</p>
+                <p className="text-dark mb-4 hero-desc">{hero.desc2}</p>
                 <Link to={hero.btnLink} className={hero.btnClass}>
                   {hero.btnText}
                 </Link>
               </div>
 
               {/* Image Section */}
-              <div className="col-md-6 text-center">
+              <div className="col-md-6 text-center order-2">
                 <img
                   src={hero.image}
                   alt="Marwat Gas Agency Online Booking"
-                  className="img-fluid rounded-4 shadow"
+                  className="img-fluid rounded-4 shadow hero-img"
                 />
               </div>
             </div>

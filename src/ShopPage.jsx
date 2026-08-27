@@ -5,9 +5,65 @@ import Navbar from "./Navbar";
 import Footer from "./Footer";
 
 import sixKgImg from "./assets/6KG.jpg";
+import tenKgImg from "./assets/Screenshot_2026-08-27_161154 copy.png";
 import fifteenKgImg from "./assets/15KG.jpg";
 import fortyFiveKgImg from "./assets/45KG.jpg";
-import regulatorImg from "./assets/Screenshot_2026-08-27_162826.png";
+import regulatorImg from "./assets/Screenshot_2026-08-27_162826 copy.png";
+import burnerImg from "./assets/Screenshot_2026-08-27_162826 copy.png";
+import pipelineImg from "./assets/Screenshot_2026-08-27_162931.png";
+
+function CatalogCard({ children }) {
+  return (
+    <div
+      className="h-100 p-4 rounded-4 d-flex flex-column"
+      style={{
+        background: "#10233f",
+        color: "white",
+        border: "1px solid #1e3657",
+        boxShadow: "0 12px 30px rgba(16,35,63,.15)",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function ProductImage({ image, alt, badge }) {
+  return (
+    <div className="text-center mb-4">
+      <div
+        className="position-relative d-inline-flex align-items-center justify-content-center rounded-circle overflow-hidden"
+        style={{
+          width: "150px",
+          height: "150px",
+          background: "#f1f4f8",
+          border: "5px solid rgba(255,193,7,.2)",
+        }}
+      >
+        <img
+          src={image}
+          alt={alt}
+          className="w-100 h-100"
+          style={{ objectFit: "contain" }}
+        />
+      </div>
+      {badge && (
+        <span className="badge rounded-pill d-block mx-auto mt-3" style={{ background: "#084298", padding: "8px 12px", width: "fit-content" }}>
+          {badge}
+        </span>
+      )}
+    </div>
+  );
+}
+
+function PriceLine({ label, price }) {
+  return (
+    <div className="d-flex justify-content-between align-items-center mb-3">
+      <span className="text-white-50 small">{label}</span>
+      <strong className="fs-5 text-warning">{price}</strong>
+    </div>
+  );
+}
 
 function ShopPage() {
   const navigate = useNavigate();
@@ -21,6 +77,15 @@ function ShopPage() {
       desc: "Ideal for home use, cooking and everyday domestic LPG needs.",
       price: 1650,
       badge: "Home Use",
+    },
+    {
+      name: "10 Kg Cylinder",
+      type: "TenKg",
+      size: "10 Kg",
+      img: tenKgImg,
+      desc: "A practical mid-size cylinder for homes and regular LPG needs.",
+      price: 4000,
+      badge: "Everyday Use",
     },
     {
       name: "Commercial Cylinder",
@@ -44,10 +109,12 @@ function ShopPage() {
 
   const [quantities, setQuantities] = useState({
     Domestic: 1,
+    TenKg: 1,
     Commercial: 1,
     Industrial: 1,
   });
   const [pipeFeet, setPipeFeet] = useState(1);
+  const [pipelineFeet, setPipelineFeet] = useState(1);
 
   const changeQuantity = (type, amount) => {
     setQuantities((prev) => ({
@@ -58,7 +125,6 @@ function ShopPage() {
 
   const handleBook = (product) => {
     const quantity = quantities[product.type];
-
     const params = new URLSearchParams({
       type: product.type,
       size: product.size,
@@ -72,31 +138,40 @@ function ShopPage() {
 
   const accessories = [
     {
-      icon: "bi-speedometer2",
       name: "Gas Regulator",
       desc: "Reliable pressure control for safer LPG cylinder usage.",
-      price: 400,
+      price: "Rs 400",
       image: regulatorImg,
       imageAlt: "Gas regulator",
+      badge: "Safety Essential",
     },
     {
-      icon: "bi-bezier2",
       name: "Gas Pipe",
       desc: "Durable LPG hose for secure gas connections.",
-      price: 80,
-      priceLabel: "Rs 80 / foot",
-      imageAlt: "Gas pipe placeholder",
-      isPipe: true,
+      price: "Rs 80 / foot",
+      image: pipelineImg,
+      imageAlt: "Coiled gas pipe",
+      badge: "Flexible Length",
+      feet: pipeFeet,
+      setFeet: setPipeFeet,
     },
     {
-      icon: "bi-fire",
       name: "Gas Burner",
       desc: "Practical burner accessory for LPG cylinder use.",
+      price: "Rs 500",
+      image: burnerImg,
+      imageAlt: "Gas burner",
+      badge: "Kitchen Essential",
     },
     {
-      icon: "bi-shield-check",
-      name: "Safety Accessories",
-      desc: "Essential accessories for safer LPG handling.",
+      name: "Gas Pipeline",
+      desc: "Reliable coiled pipeline for secure LPG connections.",
+      price: "Rs 80 / foot",
+      image: pipelineImg,
+      imageAlt: "Coiled gas pipeline",
+      badge: "Flexible Length",
+      feet: pipelineFeet,
+      setFeet: setPipelineFeet,
     },
   ];
 
@@ -104,52 +179,26 @@ function ShopPage() {
     <>
       <Navbar />
 
-      <main
-        style={{
-          background:
-            "linear-gradient(180deg, #eef5ff 0%, #f7f9fc 45%, #eef3f8 100%)",
-        }}
-      >
-        {/* HERO */}
+      <main style={{ background: "linear-gradient(180deg, #eef5ff 0%, #f7f9fc 45%, #eef3f8 100%)" }}>
         <section
           className="py-5 text-white"
-          style={{
-            background:
-              "linear-gradient(135deg, #10233f 0%, #084298 55%, #0d6efd 100%)",
-          }}
+          style={{ background: "linear-gradient(135deg, #10233f 0%, #084298 55%, #0d6efd 100%)" }}
         >
           <div className="container text-center py-3">
-            <span className="text-warning fw-bold text-uppercase">
-              Marwat LPG Shop
-            </span>
-
-            <h1 className="fw-bold display-5 mt-2">
-              Cylinders & LPG Solutions
-            </h1>
-
-            <p
-              className="lead mx-auto mb-0 text-white-50"
-              style={{ maxWidth: "720px" }}
-            >
-              Select your LPG cylinder, choose the quantity and book your
-              delivery online.
+            <span className="text-warning fw-bold text-uppercase">Marwat LPG Shop</span>
+            <h1 className="fw-bold display-5 mt-2">Cylinders & LPG Solutions</h1>
+            <p className="lead mx-auto mb-0 text-white-50" style={{ maxWidth: "720px" }}>
+              Select your LPG cylinder, choose the quantity and book your delivery online.
             </p>
           </div>
         </section>
 
-        {/* CYLINDERS */}
         <section className="marwat-section">
           <div className="container">
             <div className="text-center mb-5">
               <span className="section-kicker">Cylinder Range</span>
-
-              <h2 className="section-title">
-                Choose Your LPG Cylinder
-              </h2>
-
-              <p className="section-description">
-                Prices include the cylinder and LPG.
-              </p>
+              <h2 className="section-title">Choose Your LPG Cylinder</h2>
+              <p className="section-description">Prices include the cylinder and LPG.</p>
             </div>
 
             <div className="row g-4">
@@ -158,168 +207,39 @@ function ShopPage() {
                 const total = item.price * quantity;
 
                 return (
-                  <div
-                    className="col-lg-4 col-md-6"
-                    key={item.name}
-                  >
-                    <div
-                      className="h-100 overflow-hidden"
-                      style={{
-                        background: "#ffffff",
-                        border: "1px solid #d9e4f0",
-                        borderRadius: "20px",
-                        boxShadow:
-                          "0 12px 35px rgba(23,50,85,0.08)",
-                      }}
-                    >
-                      {/* Image */}
-                      <div
-                        className="position-relative d-flex justify-content-center align-items-center"
-                        style={{
-                          height: "255px",
-                          background:
-                            "linear-gradient(145deg, #ffffff, #f3f7fc)",
-                        }}
-                      >
-                        <span
-                          className="position-absolute top-0 start-0 m-3 badge rounded-pill"
-                          style={{
-                            background: "#10233f",
-                            padding: "9px 13px",
-                          }}
-                        >
-                          {item.badge}
-                        </span>
+                  <div className="col-xl-3 col-md-6" key={item.name}>
+                    <CatalogCard>
+                      <ProductImage image={item.img} alt={item.name} badge={item.badge} />
 
-                        <img
-                          src={item.img}
-                          alt={item.name}
-                          style={{
-                            maxHeight: "205px",
-                            maxWidth: "80%",
-                            objectFit: "contain",
-                          }}
-                        />
+                      <div className="d-flex justify-content-between align-items-start gap-2 mb-2">
+                        <h5 className="fw-bold mb-0">{item.name}</h5>
+                        <span className="badge bg-primary">{item.size}</span>
+                      </div>
+                      <p className="text-white-50 mb-3">{item.desc}</p>
+                      <PriceLine label="Unit Price" price={`Rs ${item.price.toLocaleString()}`} />
+
+                      <div className="d-flex align-items-center justify-content-between p-3 rounded-3 mb-3" style={{ background: "rgba(255,255,255,.08)", border: "1px solid rgba(255,255,255,.12)" }}>
+                        <span className="fw-semibold">Quantity</span>
+                        <div className="d-flex align-items-center gap-3">
+                          <button type="button" onClick={() => changeQuantity(item.type, -1)} className="btn btn-outline-light d-flex align-items-center justify-content-center" style={{ width: "36px", height: "36px", borderRadius: "50%" }}>
+                            <i className="bi bi-dash-lg"></i>
+                          </button>
+                          <strong className="fs-5 text-center" style={{ minWidth: "25px" }}>{quantity}</strong>
+                          <button type="button" onClick={() => changeQuantity(item.type, 1)} className="btn btn-warning d-flex align-items-center justify-content-center" style={{ width: "36px", height: "36px", borderRadius: "50%" }}>
+                            <i className="bi bi-plus-lg"></i>
+                          </button>
+                        </div>
                       </div>
 
-                      {/* Info */}
-                      <div className="p-4">
-                        <div className="d-flex justify-content-between align-items-start gap-3">
-                          <div>
-                            <h4
-                              className="fw-bold mb-1"
-                              style={{
-                                color: "#10233f",
-                              }}
-                            >
-                              {item.name}
-                            </h4>
-
-                            <span className="badge bg-primary-subtle text-primary">
-                              {item.size}
-                            </span>
-                          </div>
-
-                          <div className="text-end">
-                            <small className="text-muted d-block">
-                              Unit Price
-                            </small>
-
-                            <strong
-                              className="fs-5"
-                              style={{
-                                color: "#0d6efd",
-                              }}
-                            >
-                              Rs {item.price.toLocaleString()}
-                            </strong>
-                          </div>
-                        </div>
-
-                        <p className="text-muted my-3">
-                          {item.desc}
-                        </p>
-
-                        {/* QUANTITY */}
-                        <div
-                          className="d-flex align-items-center justify-content-between p-3 rounded-3 mb-3"
-                          style={{
-                            background: "#f5f8fc",
-                            border: "1px solid #dce5f0",
-                          }}
-                        >
-                          <span className="fw-semibold">
-                            Quantity
-                          </span>
-
-                          <div className="d-flex align-items-center gap-3">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                changeQuantity(item.type, -1)
-                              }
-                              className="btn btn-outline-secondary d-flex align-items-center justify-content-center"
-                              style={{
-                                width: "38px",
-                                height: "38px",
-                                borderRadius: "50%",
-                              }}
-                            >
-                              <i className="bi bi-dash-lg"></i>
-                            </button>
-
-                            <strong
-                              className="fs-5 text-center"
-                              style={{
-                                minWidth: "25px",
-                              }}
-                            >
-                              {quantity}
-                            </strong>
-
-                            <button
-                              type="button"
-                              onClick={() =>
-                                changeQuantity(item.type, 1)
-                              }
-                              className="btn btn-primary d-flex align-items-center justify-content-center"
-                              style={{
-                                width: "38px",
-                                height: "38px",
-                                borderRadius: "50%",
-                              }}
-                            >
-                              <i className="bi bi-plus-lg"></i>
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* TOTAL */}
-                        <div className="d-flex justify-content-between align-items-center mb-4">
-                          <span className="text-muted">
-                            Total
-                          </span>
-
-                          <strong
-                            className="fs-4"
-                            style={{
-                              color: "#10233f",
-                            }}
-                          >
-                            Rs {total.toLocaleString()}
-                          </strong>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => handleBook(item)}
-                          className="btn marwat-primary-btn w-100 py-3"
-                        >
-                          Book Now
-                          <i className="bi bi-arrow-right ms-2"></i>
-                        </button>
+                      <div className="d-flex justify-content-between align-items-center mb-4">
+                        <span className="text-white-50">Total</span>
+                        <strong className="fs-4 text-warning">Rs {total.toLocaleString()}</strong>
                       </div>
-                    </div>
+                      <button type="button" onClick={() => handleBook(item)} className="btn marwat-primary-btn w-100 py-3 mt-auto">
+                        Book Now
+                        <i className="bi bi-arrow-right ms-2"></i>
+                      </button>
+                    </CatalogCard>
                   </div>
                 );
               })}
@@ -327,122 +247,42 @@ function ShopPage() {
           </div>
         </section>
 
-        {/* ACCESSORIES */}
-        <section
-          className="marwat-section"
-          style={{
-            background: "#e8f0f9",
-          }}
-        >
+        <section className="marwat-section" style={{ background: "#e8f0f9" }}>
           <div className="container">
             <div className="text-center mb-5">
-              <span className="section-kicker">
-                LPG Accessories
-              </span>
-
-              <h2 className="section-title">
-                Essential Gas Accessories
-              </h2>
-
-              <p className="section-description">
-                Useful accessories for safer and easier LPG use.
-              </p>
+              <span className="section-kicker">LPG Accessories</span>
+              <h2 className="section-title">Essential Gas Accessories</h2>
+              <p className="section-description">Useful accessories for safer and easier LPG use.</p>
             </div>
 
             <div className="row g-4">
               {accessories.map((item) => (
-                <div
-                  className="col-lg-3 col-md-6"
-                  key={item.name}
-                >
-                  <div
-                    className="h-100 p-4 rounded-4"
-                    style={{
-                      background: "#10233f",
-                      color: "white",
-                      border: "1px solid #1e3657",
-                      boxShadow:
-                        "0 12px 30px rgba(16,35,63,.15)",
-                    }}
-                  >
-                    {item.image ? (
-                      <div
-                        className="d-flex align-items-center justify-content-center rounded-3 mb-4 overflow-hidden"
-                        style={{
-                          height: "150px",
-                          background: "#f1f4f8",
-                        }}
-                      >
-                        <img
-                          src={item.image}
-                          alt={item.imageAlt}
-                          className="w-100 h-100"
-                          style={{ objectFit: "contain" }}
-                        />
-                      </div>
-                    ) : item.isPipe ? (
-                      <div
-                        className="d-flex flex-column align-items-center justify-content-center rounded-3 mb-4 text-center"
-                        style={{
-                          height: "150px",
-                          background: "#f1f4f8",
-                          color: "#5d6877",
-                          border: "1px dashed #aebed3",
-                        }}
-                      >
-                        <i className="bi bi-image fs-2 mb-2"></i>
-                        <small>Gas pipe image coming soon</small>
-                      </div>
-                    ) : (
-                      <div
-                        className="d-flex align-items-center justify-content-center rounded-circle mb-4"
-                        style={{
-                          width: "58px",
-                          height: "58px",
-                          background: "rgba(255,193,7,.12)",
-                        }}
-                      >
-                        <i
-                          className={`bi ${item.icon} fs-3 text-warning`}
-                        ></i>
-                      </div>
-                    )}
-
-                    <h5 className="fw-bold">{item.name}</h5>
-
+                <div className="col-xl-3 col-md-6" key={item.name}>
+                  <CatalogCard>
+                    <ProductImage image={item.image} alt={item.imageAlt} badge={item.badge} />
+                    <h5 className="fw-bold mb-2">{item.name}</h5>
                     <p className="text-white-50 mb-3">{item.desc}</p>
+                    <PriceLine label="Unit Price" price={item.price} />
 
-                    {item.price ? (
-                      <strong className="d-block fs-5 text-warning">
-                        {item.priceLabel || `Rs ${item.price.toLocaleString()}`}
-                      </strong>
-                    ) : null}
-
-                    {item.isPipe && (
-                      <div className="mt-3">
-                        <label className="form-label text-white fw-semibold" htmlFor="pipe-feet">
-                          Feet
-                        </label>
+                    {item.setFeet && (
+                      <>
+                        <label className="form-label text-white fw-semibold" htmlFor={`${item.name}-feet`}>Feet</label>
                         <input
-                          id="pipe-feet"
+                          id={`${item.name}-feet`}
                           type="number"
                           min="1"
                           step="1"
                           className="form-control"
-                          value={pipeFeet}
-                          onChange={(event) =>
-                            setPipeFeet(Math.max(1, Number(event.target.value) || 1))
-                          }
+                          value={item.feet}
+                          onChange={(event) => item.setFeet(Math.max(1, Number(event.target.value) || 1))}
                         />
-                        <div className="d-flex justify-content-between align-items-center mt-3">
+                        <div className="d-flex justify-content-between align-items-center mt-3 mb-4">
                           <span className="text-white-50">Total</span>
-                          <strong className="fs-5 text-warning">
-                            Rs {(80 * pipeFeet).toLocaleString()}
-                          </strong>
+                          <strong className="fs-5 text-warning">Rs {(80 * item.feet).toLocaleString()}</strong>
                         </div>
-                      </div>
+                      </>
                     )}
-                  </div>
+                  </CatalogCard>
                 </div>
               ))}
             </div>

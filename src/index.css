@@ -123,3 +123,22 @@ a {
     font-size: 1.75rem;
   }
 }
+
+@media (max-width: 420px) {
+  .hero-title {
+    font-size: 1.6rem !important;
+  }
+
+  .hero-lead {
+    font-size: 0.95rem !important;
+  }
+
+  .hero-desc {
+    font-size: 0.85rem !important;
+  }
+
+  .hero-img {
+    max-width: 100% !important;
+    margin-top: 1.5rem;
+  }
+}
