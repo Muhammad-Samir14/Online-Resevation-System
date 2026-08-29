@@ -31,7 +31,7 @@ function AboutUs() {
           </div>
         </section>
 
-        <section className="marwat-section">
+        <section className="marwat-section" style={{ background: "linear-gradient(135deg, #d4f1ffff 0%, #eef5ff 40%, #f7f9fc 100%)" }}>
           <div className="container">
             <div className="row align-items-center g-5">
               <div className="col-lg-6">
@@ -76,8 +76,10 @@ function AboutUs() {
                       <div
                         className="text-center p-4 h-100 rounded-4"
                         style={{
-                          background: "#eef5ff",
-                          border: "1px solid #d9e6f8",
+                          background: "#10233f",
+                          color: "white",
+                          border: "1px solid #1e3657",
+                          boxShadow: "0 12px 30px rgba(16,35,63,.15)",
                           transition:
                             "transform 0.25s ease, box-shadow 0.25s ease",
                         }}
@@ -85,7 +87,7 @@ function AboutUs() {
                           e.currentTarget.style.transform =
                             "translateY(-5px)";
                           e.currentTarget.style.boxShadow =
-                            "0 18px 40px rgba(13, 110, 253, 0.15)";
+                            "0 18px 40px rgba(13, 110, 253, 0.25)";
                         }}
                         onMouseLeave={(e) => {
                           e.currentTarget.style.transform = "translateY(0)";
@@ -97,17 +99,17 @@ function AboutUs() {
                           style={{
                             width: "56px",
                             height: "56px",
-                            background: "#0d6efd",
+                            background: "rgba(255,193,7,.12)",
                           }}
                         >
                           <i
-                            className={`bi ${icon} fs-3 text-white`}
+                            className={`bi ${icon} fs-3 text-warning`}
                           ></i>
                         </div>
 
                         <h5
                           className="fw-bold mt-2 mb-0"
-                          style={{ color: "#10233f" }}
+                          style={{ color: "#ffffff" }}
                         >
                           {title}
                         </h5>

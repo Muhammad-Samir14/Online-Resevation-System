@@ -269,7 +269,7 @@ function ShopPage() {
               {accessories.map((item) => {
                 const total = item.setFeet ? 80 * item.feet : item.numericPrice;
                 return (
-                  <div className="col-xl-4 col-md-6" key={item.name}>
+                  <div className="col-lg-4 col-md-6" key={item.name}>
                     <CatalogCard>
                       <ProductImage image={item.image} alt={item.imageAlt} badge={item.badge} />
                       <h5 className="fw-bold mb-2">{item.name}</h5>
