@@ -1,6 +1,7 @@
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import { Link } from "react-router-dom";
+import cylinderPhoto from "./assets/photo1.jpg";
 
 function AboutUs() {
   return (
@@ -31,29 +32,36 @@ function AboutUs() {
           </div>
         </section>
 
-        <section className="marwat-section" style={{ background: "linear-gradient(135deg, #d4f1ffff 0%, #eef5ff 40%, #f7f9fc 100%)" }}>
+        <section
+          className="marwat-section"
+          style={{
+            background:
+              "linear-gradient(135deg, #084298 0%, #0d6efd 52%, #5bb9ed 100%)",
+          }}
+        >
           <div className="container">
             <div className="row align-items-center g-5">
               <div className="col-lg-6">
-                <span className="section-kicker">
+                <span className="text-warning fw-bold text-uppercase">
                   Who We Are
                 </span>
 
-                <h2 className="section-title">
+                <h2 className="fw-bold text-white mt-2">
                   Marwat Gas Agency
                 </h2>
 
-                <p className="text-muted fs-5">
+                <p className="text-white fs-5">
                   Marwat Gas Agency is focused on making LPG cylinder
                   reservation and delivery simpler, safer and more convenient
                   for customers.
                 </p>
 
-                <p className="text-muted">
+                <p className="text-white-50">
                   Our online reservation system allows customers to select
                   their cylinder requirements, provide delivery information
                   and choose their preferred payment method from one easy
-                  platform.
+                  platform. We combine safety, reliable delivery, easy booking
+                  and responsive customer support in every service we provide.
                 </p>
 
                 <Link
@@ -64,59 +72,13 @@ function AboutUs() {
                 </Link>
               </div>
 
-              <div className="col-lg-6">
-                <div className="row g-3">
-                  {[
-                    ["bi-shield-check", "Safety First"],
-                    ["bi-truck", "Reliable Delivery"],
-                    ["bi-phone", "Easy Booking"],
-                    ["bi-headset", "Customer Support"],
-                  ].map(([icon, title]) => (
-                    <div className="col-6" key={title}>
-                      <div
-                        className="text-center p-4 h-100 rounded-4"
-                        style={{
-                          background: "#10233f",
-                          color: "white",
-                          border: "1px solid #1e3657",
-                          boxShadow: "0 12px 30px rgba(16,35,63,.15)",
-                          transition:
-                            "transform 0.25s ease, box-shadow 0.25s ease",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform =
-                            "translateY(-5px)";
-                          e.currentTarget.style.boxShadow =
-                            "0 18px 40px rgba(13, 110, 253, 0.25)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = "translateY(0)";
-                          e.currentTarget.style.boxShadow = "none";
-                        }}
-                      >
-                        <div
-                          className="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
-                          style={{
-                            width: "56px",
-                            height: "56px",
-                            background: "rgba(255,193,7,.12)",
-                          }}
-                        >
-                          <i
-                            className={`bi ${icon} fs-3 text-warning`}
-                          ></i>
-                        </div>
-
-                        <h5
-                          className="fw-bold mt-2 mb-0"
-                          style={{ color: "#ffffff" }}
-                        >
-                          {title}
-                        </h5>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+              <div className="col-lg-6 text-center">
+                <img
+                  src={cylinderPhoto}
+                  alt="Red LPG gas cylinders"
+                  className="img-fluid rounded-4 shadow-lg"
+                  style={{ maxHeight: "430px", width: "100%", objectFit: "cover" }}
+                />
               </div>
             </div>
           </div>

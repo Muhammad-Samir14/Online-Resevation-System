@@ -32,7 +32,7 @@ function ShopNow() {
 ];
 
   return (
-    <section className="marwat-section" style={{ background: "linear-gradient(135deg, #d4f1ffff 0%, #eef5ff 40%, #f7f9fc 100%)" }}>
+    <section className="marwat-section" style={{ background: "linear-gradient(135deg, #b9e4ff 0%, #d7efff 45%, #eef7ff 100%)" }}>
       <div className="container">
         <div className="text-center mb-5">
           <span className="section-kicker">Our Services</span>

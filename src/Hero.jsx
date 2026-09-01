@@ -1,17 +1,16 @@
 import { Link } from "react-router-dom";
-import photot1 from "./assets/photo1.jpg";
 
 function Hero() {
   const heroSections = [
     {
-      title: "Marwat Gas Agency — Delivering Energy You Can Trust",
+      title: "Marwat Gas Agency: Delivering Energy You Can Trust",
       desc1:
         "Established with a mission to provide safe, clean, and reliable LPG energy across Pakistan, Marwat Gas Agency has built a trusted reputation in the energy sector. With a dedicated network of distributors, delivery partners, and customer-focused support, we ensure efficient gas supply for homes, restaurants, and industries alike.",
       desc2:
         "Our professional management team is driven by quality, safety, and innovation — making Marwat Gas Agency one of the most dependable LPG service providers in the region.",
       btnText: "Reserve Now",
       btnLink: "/register",
-      image: photot1,
+      image: "https://images.pexels.com/photos/36249353/pexels-photo-36249353.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
       bgColor: "#77BEF0",
       btnClass: "btn btn-warning text-dark fw-bold btn-lg shadow",
     },
@@ -43,8 +42,9 @@ function Hero() {
               <div className="col-md-6 text-center order-2">
                 <img
                   src={hero.image}
-                  alt="Marwat Gas Agency Online Booking"
+                  alt="Delivery worker loading LPG cylinders onto a truck"
                   className="img-fluid rounded-4 shadow hero-img"
+                  style={{ width: "100%", maxWidth: "560px", objectFit: "cover" }}
                 />
               </div>
             </div>
