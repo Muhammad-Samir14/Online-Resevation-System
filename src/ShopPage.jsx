@@ -9,7 +9,6 @@ import tenKgImg from "./assets/Screenshot_2026-08-27_161154 copy.png";
 import fifteenKgImg from "./assets/15KG.jpg";
 import fortyFiveKgImg from "./assets/45KG.jpg";
 import regulatorImg from "./assets/Screenshot_2026-08-27_162826 copy.png";
-import burnerImg from "./assets/Screenshot_2026-08-27_162826 copy.png";
 import pipelineImg from "./assets/Screenshot_2026-08-27_162931.png";
 
 function CatalogCard({ children }) {
@@ -170,15 +169,6 @@ function ShopPage() {
       feet: pipelineFeet,
       setFeet: setPipelineFeet,
     },
-    {
-      name: "Gas Burner",
-      desc: "Practical burner accessory for LPG cylinder use.",
-      price: "Rs 500",
-      numericPrice: 500,
-      image: burnerImg,
-      imageAlt: "Gas burner",
-      badge: "Kitchen Essential",
-    },
   ];
 
   return (
@@ -269,7 +259,7 @@ function ShopPage() {
               {accessories.map((item) => {
                 const total = item.setFeet ? 80 * item.feet : item.numericPrice;
                 return (
-                  <div className="col-lg-4 col-md-6" key={item.name}>
+                  <div className="col-lg-6 col-md-6" key={item.name}>
                     <CatalogCard>
                       <ProductImage image={item.image} alt={item.imageAlt} badge={item.badge} />
                       <h5 className="fw-bold mb-2">{item.name}</h5>
