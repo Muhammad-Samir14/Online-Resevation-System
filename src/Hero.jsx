@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import truckImage from "./assets/OmcYXJ copy.png";
 
 function Hero() {
   const heroSections = [
@@ -10,7 +11,7 @@ function Hero() {
         "Our professional management team is driven by quality, safety, and innovation — making Marwat Gas Agency one of the most dependable LPG service providers in the region.",
       btnText: "Reserve Now",
       btnLink: "/register",
-      image: "https://images.pexels.com/photos/36249353/pexels-photo-36249353.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+      image: truckImage,
       bgColor: "#77BEF0",
       btnClass: "btn btn-warning text-dark fw-bold btn-lg shadow",
     },
