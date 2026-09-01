@@ -9,7 +9,7 @@ function ShopNow() {
       "Browse domestic, commercial and industrial LPG cylinders and accessories.",
     accent: "#0d6efd",
     button: "Shop Cylinders",
-    path: "/services",
+    path: "/shop",
   },
   {
     icon: "bi-droplet-fill",
@@ -49,10 +49,10 @@ function ShopNow() {
 
         <div className="row g-4 justify-content-center">
           {shopOptions.map((item) => (
-            <div className="col-lg-4 col-md-6" key={item.title}>
-              <div className="marwat-card h-100 p-4 text-center">
+            <div className="col-lg-4 col-md-6 d-flex" key={item.title}>
+              <div className="marwat-card h-100 p-4 text-center d-flex flex-column w-100">
                 <div
-                  className="d-inline-flex align-items-center justify-content-center rounded-circle mb-4"
+                  className="d-inline-flex align-items-center justify-content-center rounded-circle mb-4 mx-auto"
                   style={{
                     width: "72px",
                     height: "72px",
@@ -65,17 +65,17 @@ function ShopNow() {
                   ></i>
                 </div>
 
-                <h4 className="fw-bold" style={{ color: "#10233f" }}>
+                <h4 className="fw-bold mb-3" style={{ color: "#10233f" }}>
                   {item.title}
                 </h4>
 
-                <p className="text-muted mb-4">
+                <p className="text-muted mb-4 flex-grow-1">
                   {item.description}
                 </p>
 
                 <Link
                   to={item.path}
-                  className="btn marwat-primary-btn px-4 py-2"
+                  className="btn marwat-primary-btn px-4 py-2 mt-auto"
                 >
                   {item.button}
                   <i className="bi bi-arrow-right ms-2"></i>

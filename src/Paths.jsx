@@ -45,12 +45,12 @@ const route = createBrowserRouter([
 
   {
     path: "/services",
-    element: <ShopPage />,
+    element: <PublicShopPage />,
   },
 
   {
     path: "/shop",
-    element: <PublicShopPage />,
+    element: <ShopPage />,
   },
 
   {
