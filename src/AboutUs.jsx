@@ -8,21 +8,17 @@ function AboutUs() {
     <>
       <Navbar />
 
-      <main style={{ background: "linear-gradient(135deg, #b9e4ff 0%, #d7efff 45%, #eef7ff 100%)" }}>
-        <section className="marwat-section">
-          <div className="container">
-            <div className="text-center mb-5">
-              <span className="section-kicker">About Marwat Gas</span>
-
-              <h2 className="section-title display-6">
-                Reliable LPG Service You Can Trust
-              </h2>
-
-              <p className="section-description">
-                Providing convenient LPG booking and delivery solutions for
-                homes and businesses.
-              </p>
-            </div>
+      <main style={{ background: "linear-gradient(180deg, #eef5ff 0%, #f7f9fc 45%, #eef3f8 100%)" }}>
+        <section
+          className="py-5 text-white"
+          style={{ background: "linear-gradient(135deg, #10233f 0%, #084298 55%, #0d6efd 100%)" }}
+        >
+          <div className="container text-center py-3">
+            <span className="text-warning fw-bold text-uppercase">About Marwat Gas</span>
+            <h1 className="fw-bold display-5 mt-2">Reliable LPG Service You Can Trust</h1>
+            <p className="lead mx-auto mb-0 text-white-50" style={{ maxWidth: "720px" }}>
+              Providing convenient LPG booking and delivery solutions for homes and businesses.
+            </p>
           </div>
         </section>
 
