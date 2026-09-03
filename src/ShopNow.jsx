@@ -50,26 +50,36 @@ function ShopNow() {
         <div className="row g-4 justify-content-center">
           {shopOptions.map((item) => (
             <div className="col-lg-4 col-md-6 d-flex" key={item.title}>
-              <div className="marwat-card h-100 p-4 text-center d-flex flex-column w-100">
+              <div
+                className="h-100 p-4 rounded-4 text-center d-flex flex-column w-100"
+                style={{
+                  background: "#10233f",
+                  color: "white",
+                  border: "1px solid #1e3657",
+                  boxShadow: "0 12px 30px rgba(16,35,63,.15)",
+                  transition: "transform 0.25s ease, box-shadow 0.25s ease",
+                }}
+              >
                 <div
                   className="d-inline-flex align-items-center justify-content-center rounded-circle mb-4 mx-auto"
                   style={{
                     width: "72px",
                     height: "72px",
-                    background: `${item.accent}15`,
+                    background: "rgba(13,110,253,.18)",
+                    border: "1px solid rgba(13,110,253,.3)",
                   }}
                 >
                   <i
                     className={`bi ${item.icon} fs-2`}
-                    style={{ color: item.accent }}
+                    style={{ color: "#ffc107" }}
                   ></i>
                 </div>
 
-                <h4 className="fw-bold mb-3" style={{ color: "#10233f" }}>
+                <h4 className="fw-bold mb-3 text-white">
                   {item.title}
                 </h4>
 
-                <p className="text-muted mb-4 flex-grow-1">
+                <p className="text-white-50 mb-4 flex-grow-1">
                   {item.description}
                 </p>
 
