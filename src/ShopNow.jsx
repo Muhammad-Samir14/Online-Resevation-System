@@ -86,6 +86,7 @@ function ShopNow() {
                 <Link
                   to={item.path}
                   className="btn marwat-primary-btn px-4 py-2 mt-auto"
+                  style={{ color: "#ffffff" }}
                 >
                   {item.button}
                   <i className="bi bi-arrow-right ms-2"></i>

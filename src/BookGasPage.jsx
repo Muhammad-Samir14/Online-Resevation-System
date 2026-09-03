@@ -10,6 +10,22 @@ const PRICE_MAP = {
   "45 Kg": 9200,
 };
 
+const DARK_CARD_STYLE = {
+  background: "#10233f",
+  color: "white",
+  border: "1px solid #1e3657",
+  boxShadow: "0 12px 30px rgba(16,35,63,.15)",
+  borderRadius: "18px",
+};
+
+const DARK_INPUT_STYLE = {
+  background: "rgba(255,255,255,.08)",
+  color: "white",
+  border: "1px solid rgba(255,255,255,.15)",
+  minHeight: "48px",
+  borderRadius: "9px",
+};
+
 function BookGasPage() {
   const [searchParams] = useSearchParams();
   const [formData, setFormData] = useState({
@@ -164,20 +180,21 @@ function BookGasPage() {
           style={{
             width: "42px",
             height: "42px",
-            background: "#e8f1ff",
-            color: "#0d6efd",
+            background: "rgba(13,110,253,.18)",
+            border: "1px solid rgba(13,110,253,.3)",
+            color: "#ffc107",
           }}
         >
           <i className={`bi ${icon}`}></i>
         </div>
 
         <div>
-          <h5 className="fw-bold mb-0" style={{ color: "#10233f" }}>
+          <h5 className="fw-bold mb-0 text-white">
             {title}
           </h5>
 
           {description && (
-            <small className="text-muted">{description}</small>
+            <small className="text-white-50">{description}</small>
           )}
         </div>
       </div>
@@ -186,6 +203,19 @@ function BookGasPage() {
 
   return (
     <>
+      <style>{`
+        .booking-input::placeholder { color: rgba(255,255,255,.4); }
+        .booking-input:focus {
+          background: rgba(255,255,255,.12) !important;
+          color: #fff !important;
+          border-color: #0d6efd !important;
+          box-shadow: 0 0 0 0.2rem rgba(13,110,253,.15) !important;
+        }
+        .booking-input option {
+          background: #10233f;
+          color: #fff;
+        }
+      `}</style>
       <Navbar />
 
       <main
@@ -214,7 +244,7 @@ function BookGasPage() {
             <form onSubmit={handleSubmit}>
               <div className="row g-4">
                 <div className="col-lg-8">
-                  <div className="marwat-card p-4 p-lg-5 mb-4">
+                  <div className="p-4 p-lg-5 mb-4" style={DARK_CARD_STYLE}>
                     <SectionTitle
                       icon="bi-person-fill"
                       title="Customer Information"
@@ -223,14 +253,15 @@ function BookGasPage() {
 
                     <div className="row g-3">
                       <div className="col-md-6">
-                        <label className="form-label fw-semibold">
+                        <label className="form-label fw-semibold text-white-50">
                           Full Name
                         </label>
 
                         <input
                           type="text"
                           name="fullName"
-                          className="form-control marwat-input"
+                          className="form-control booking-input"
+                          style={DARK_INPUT_STYLE}
                           placeholder="Receiver's full name"
                           value={formData.fullName}
                           onChange={handleInputChange}
@@ -239,14 +270,15 @@ function BookGasPage() {
                       </div>
 
                       <div className="col-md-6">
-                        <label className="form-label fw-semibold">
+                        <label className="form-label fw-semibold text-white-50">
                           Phone Number
                         </label>
 
                         <input
                           type="tel"
                           name="phoneNumber"
-                          className="form-control marwat-input"
+                          className="form-control booking-input"
+                          style={DARK_INPUT_STYLE}
                           placeholder="03XX XXXXXXX"
                           value={formData.phoneNumber}
                           onChange={handleInputChange}
@@ -255,14 +287,15 @@ function BookGasPage() {
                       </div>
 
                       <div className="col-12">
-                        <label className="form-label fw-semibold">
+                        <label className="form-label fw-semibold text-white-50">
                           Email
                         </label>
 
                         <input
                           type="email"
                           name="email"
-                          className="form-control marwat-input"
+                          className="form-control booking-input"
+                          style={DARK_INPUT_STYLE}
                           placeholder="example@email.com"
                           value={formData.email}
                           onChange={handleInputChange}
@@ -272,7 +305,7 @@ function BookGasPage() {
                     </div>
                   </div>
 
-                  <div className="marwat-card p-4 p-lg-5 mb-4">
+                  <div className="p-4 p-lg-5 mb-4" style={DARK_CARD_STYLE}>
                     <SectionTitle
                       icon="bi-fire"
                       title="Cylinder Details"
@@ -281,13 +314,14 @@ function BookGasPage() {
 
                     <div className="row g-3">
                       <div className="col-md-6">
-                        <label className="form-label fw-semibold">
+                        <label className="form-label fw-semibold text-white-50">
                           Cylinder Type
                         </label>
 
                         <select
                           name="cylinderType"
-                          className="form-select marwat-input"
+                          className="form-select booking-input"
+                          style={DARK_INPUT_STYLE}
                           value={formData.cylinderType}
                           onChange={handleInputChange}
                         >
@@ -298,13 +332,14 @@ function BookGasPage() {
                       </div>
 
                       <div className="col-md-6">
-                        <label className="form-label fw-semibold">
+                        <label className="form-label fw-semibold text-white-50">
                           Cylinder Size
                         </label>
 
                         <select
                           name="cylinderSize"
-                          className="form-select marwat-input"
+                          className="form-select booking-input"
+                          style={DARK_INPUT_STYLE}
                           value={formData.cylinderSize}
                           onChange={handleInputChange}
                         >
@@ -315,22 +350,22 @@ function BookGasPage() {
                       </div>
 
                       <div className="col-md-6">
-                        <label className="form-label fw-semibold">
+                        <label className="form-label fw-semibold text-white-50">
                           Quantity
                         </label>
 
                         <div
                           className="d-flex align-items-center justify-content-between p-2 rounded-3"
                           style={{
-                            background: "#f5f8fc",
-                            border: "1px solid #dce5f0",
+                            background: "rgba(255,255,255,.08)",
+                            border: "1px solid rgba(255,255,255,.15)",
                             minHeight: "48px",
                           }}
                         >
                           <button
                             type="button"
                             onClick={() => changeQuantity(-1)}
-                            className="btn btn-outline-secondary d-flex align-items-center justify-content-center"
+                            className="btn btn-outline-light d-flex align-items-center justify-content-center"
                             style={{
                               width: "38px",
                               height: "38px",
@@ -341,7 +376,7 @@ function BookGasPage() {
                           </button>
 
                           <strong
-                            className="fs-5 text-center"
+                            className="fs-5 text-center text-white"
                             style={{ minWidth: "25px" }}
                           >
                             {formData.quantity}
@@ -350,7 +385,7 @@ function BookGasPage() {
                           <button
                             type="button"
                             onClick={() => changeQuantity(1)}
-                            className="btn btn-primary d-flex align-items-center justify-content-center"
+                            className="btn btn-warning d-flex align-items-center justify-content-center"
                             style={{
                               width: "38px",
                               height: "38px",
@@ -363,13 +398,14 @@ function BookGasPage() {
                       </div>
 
                       <div className="col-md-6">
-                        <label className="form-label fw-semibold">
+                        <label className="form-label fw-semibold text-white-50">
                           Preferred Delivery Time
                         </label>
 
                         <select
                           name="deliveryTimeSlot"
-                          className="form-select marwat-input"
+                          className="form-select booking-input"
+                          style={DARK_INPUT_STYLE}
                           value={formData.deliveryTimeSlot}
                           onChange={handleInputChange}
                         >
@@ -383,24 +419,23 @@ function BookGasPage() {
                     <div
                       className="d-flex justify-content-between align-items-center mt-3 p-3 rounded-3"
                       style={{
-                        background: "#eef5ff",
-                        border: "1px solid #d9e6f8",
+                        background: "rgba(255,255,255,.06)",
+                        border: "1px solid rgba(255,255,255,.12)",
                       }}
                     >
-                      <span className="fw-semibold text-muted">
+                      <span className="fw-semibold text-white-50">
                         Estimated Total
                       </span>
 
                       <strong
-                        className="fs-4"
-                        style={{ color: "#0d6efd" }}
+                        className="fs-4 text-warning"
                       >
                         Rs {totalPrice.toLocaleString()}
                       </strong>
                     </div>
                   </div>
 
-                  <div className="marwat-card p-4 p-lg-5 mb-4">
+                  <div className="p-4 p-lg-5 mb-4" style={DARK_CARD_STYLE}>
                     <SectionTitle
                       icon="bi-geo-alt-fill"
                       title="Delivery Address"
@@ -408,14 +443,15 @@ function BookGasPage() {
                     />
 
                     <div className="mb-3">
-                      <label className="form-label fw-semibold">
+                      <label className="form-label fw-semibold text-white-50">
                         Street Address
                       </label>
 
                       <input
                         type="text"
                         name="streetAddress"
-                        className="form-control marwat-input"
+                        className="form-control booking-input"
+                        style={DARK_INPUT_STYLE}
                         placeholder="House number, street and area"
                         value={formData.streetAddress}
                         onChange={handleInputChange}
@@ -424,9 +460,9 @@ function BookGasPage() {
                     </div>
 
                     <div>
-                      <label className="form-label fw-semibold">
+                      <label className="form-label fw-semibold text-white-50">
                         Nearest Landmark
-                        <span className="text-muted fw-normal">
+                        <span className="text-white-50 fw-normal">
                           {" "}
                           (Optional)
                         </span>
@@ -435,7 +471,8 @@ function BookGasPage() {
                       <input
                         type="text"
                         name="landmark"
-                        className="form-control marwat-input"
+                        className="form-control booking-input"
+                        style={DARK_INPUT_STYLE}
                         placeholder="Near mosque, school, market etc."
                         value={formData.landmark}
                         onChange={handleInputChange}
@@ -443,7 +480,7 @@ function BookGasPage() {
                     </div>
                   </div>
 
-                  <div className="marwat-card p-4 p-lg-5">
+                  <div className="p-4 p-lg-5" style={DARK_CARD_STYLE}>
                     <SectionTitle
                       icon="bi-wallet2"
                       title="Payment"
@@ -473,11 +510,11 @@ function BookGasPage() {
                               borderColor:
                                 formData.paymentMethod === method.name
                                   ? "#0d6efd"
-                                  : "#dce5f0",
+                                  : "rgba(255,255,255,.15)",
                               background:
                                 formData.paymentMethod === method.name
-                                  ? "#eef5ff"
-                                  : "#ffffff",
+                                  ? "rgba(13,110,253,.15)"
+                                  : "rgba(255,255,255,.05)",
                             }}
                           >
                             <div className="d-flex align-items-center">
@@ -493,10 +530,10 @@ function BookGasPage() {
                               />
 
                               <i
-                                className={`bi ${method.icon} text-primary me-2`}
+                                className={`bi ${method.icon} text-warning me-2`}
                               ></i>
 
-                              <span className="fw-semibold">
+                              <span className="fw-semibold text-white">
                                 {method.name}
                               </span>
                             </div>
@@ -509,8 +546,8 @@ function BookGasPage() {
                       <div
                         className="rounded-4 p-4"
                         style={{
-                          background: "#f7faff",
-                          border: "1px solid #d9e6f8",
+                          background: "rgba(255,255,255,.05)",
+                          border: "1px solid rgba(255,255,255,.12)",
                         }}
                       >
                         <div className="row g-4">
@@ -518,8 +555,9 @@ function BookGasPage() {
                             <div
                               className="rounded-4 p-4 h-100"
                               style={{
-                                background: "#10233f",
+                                background: "#0a1a30",
                                 color: "white",
+                                border: "1px solid #1e3657",
                               }}
                             >
                               <i
@@ -528,7 +566,7 @@ function BookGasPage() {
                                 } fs-2 text-warning`}
                               ></i>
 
-                              <h4 className="fw-bold mt-3">
+                              <h4 className="fw-bold mt-3 text-white">
                                 Pay via {getPaymentDetails().title}
                               </h4>
 
@@ -542,7 +580,7 @@ function BookGasPage() {
                                 Account Title
                               </small>
 
-                              <p className="fw-bold mb-3">
+                              <p className="fw-bold mb-3 text-white">
                                 {getPaymentDetails().accountTitle}
                               </p>
 
@@ -559,14 +597,15 @@ function BookGasPage() {
                           <div className="col-lg-7">
                             <div className="row g-3">
                               <div className="col-md-6">
-                                <label className="form-label fw-semibold">
+                                <label className="form-label fw-semibold text-white-50">
                                   Amount Sent
                                 </label>
 
                                 <input
                                   type="number"
                                   name="amountSent"
-                                  className="form-control marwat-input"
+                                  className="form-control booking-input"
+                                  style={DARK_INPUT_STYLE}
                                   placeholder="Rs."
                                   value={formData.amountSent}
                                   onChange={handleInputChange}
@@ -575,14 +614,15 @@ function BookGasPage() {
                               </div>
 
                               <div className="col-md-6">
-                                <label className="form-label fw-semibold">
+                                <label className="form-label fw-semibold text-white-50">
                                   Sender Name
                                 </label>
 
                                 <input
                                   type="text"
                                   name="senderName"
-                                  className="form-control marwat-input"
+                                  className="form-control booking-input"
+                                  style={DARK_INPUT_STYLE}
                                   placeholder="Account holder name"
                                   value={formData.senderName}
                                   onChange={handleInputChange}
@@ -591,14 +631,15 @@ function BookGasPage() {
                               </div>
 
                               <div className="col-md-6">
-                                <label className="form-label fw-semibold">
+                                <label className="form-label fw-semibold text-white-50">
                                   Sender Mobile Number
                                 </label>
 
                                 <input
                                   type="tel"
                                   name="senderNumber"
-                                  className="form-control marwat-input"
+                                  className="form-control booking-input"
+                                  style={DARK_INPUT_STYLE}
                                   placeholder="03XX XXXXXXX"
                                   value={formData.senderNumber}
                                   onChange={handleInputChange}
@@ -607,14 +648,15 @@ function BookGasPage() {
                               </div>
 
                               <div className="col-md-6">
-                                <label className="form-label fw-semibold">
+                                <label className="form-label fw-semibold text-white-50">
                                   Transaction ID
                                 </label>
 
                                 <input
                                   type="text"
                                   name="transactionId"
-                                  className="form-control marwat-input"
+                                  className="form-control booking-input"
+                                  style={DARK_INPUT_STYLE}
                                   placeholder="Transaction/reference ID"
                                   value={formData.transactionId}
                                   onChange={handleInputChange}
@@ -622,26 +664,31 @@ function BookGasPage() {
                               </div>
 
                               <div className="col-12">
-                                <label className="form-label fw-semibold">
+                                <label className="form-label fw-semibold text-white-50">
                                   Payment Screenshot
                                 </label>
 
                                 <div
                                   className="text-center rounded-3 p-4"
                                   style={{
-                                    border: "2px dashed #aebed3",
-                                    background: "white",
+                                    border: "2px dashed rgba(255,255,255,.2)",
+                                    background: "rgba(255,255,255,.05)",
                                   }}
                                 >
-                                  <i className="bi bi-cloud-arrow-up fs-2 text-primary"></i>
+                                  <i className="bi bi-cloud-arrow-up fs-2 text-warning"></i>
 
-                                  <p className="fw-semibold mb-2 mt-2">
+                                  <p className="fw-semibold mb-2 mt-2 text-white">
                                     Upload payment screenshot
                                   </p>
 
                                   <input
                                     type="file"
                                     className="form-control"
+                                    style={{
+                                      background: "rgba(255,255,255,.08)",
+                                      color: "white",
+                                      border: "1px solid rgba(255,255,255,.15)",
+                                    }}
                                     accept="image/png,image/jpeg,image/webp"
                                     onChange={(e) =>
                                       setPaymentScreenshot(
@@ -659,9 +706,9 @@ function BookGasPage() {
                     )}
 
                     <div className="mt-4">
-                      <label className="form-label fw-semibold">
+                      <label className="form-label fw-semibold text-white-50">
                         Additional Notes
-                        <span className="text-muted fw-normal">
+                        <span className="text-white-50 fw-normal">
                           {" "}
                           (Optional)
                         </span>
@@ -669,7 +716,11 @@ function BookGasPage() {
 
                       <textarea
                         name="additionalNotes"
-                        className="form-control"
+                        className="form-control booking-input"
+                        style={{
+                          ...DARK_INPUT_STYLE,
+                          minHeight: "auto",
+                        }}
                         rows="3"
                         placeholder="Special delivery instructions..."
                         value={formData.additionalNotes}
@@ -681,78 +732,81 @@ function BookGasPage() {
 
                 <div className="col-lg-4">
                   <div
-                    className="marwat-card p-4"
-                    style={{ position: "sticky", top: "90px" }}
+                    className="p-4"
+                    style={{
+                      ...DARK_CARD_STYLE,
+                      position: "sticky",
+                      top: "90px",
+                    }}
                   >
-                    <h4 className="fw-bold mb-4">
-                      <i className="bi bi-receipt text-primary me-2"></i>
+                    <h4 className="fw-bold mb-4 text-white">
+                      <i className="bi bi-receipt text-warning me-2"></i>
                       Booking Summary
                     </h4>
 
                     <div className="mb-3">
-                      <span className="text-muted">Selected:</span>
-                      <strong className="ms-1">
+                      <span className="text-white-50">Selected:</span>
+                      <strong className="ms-1 text-white">
                         {formData.cylinderType} {formData.cylinderSize}
                       </strong>
                     </div>
 
                     <div className="d-flex justify-content-between mb-3">
-                      <span className="text-muted">Order Type</span>
+                      <span className="text-white-50">Order Type</span>
 
-                      <strong>{formData.orderType}</strong>
+                      <strong className="text-white">{formData.orderType}</strong>
                     </div>
 
                     <div className="d-flex justify-content-between mb-3">
-                      <span className="text-muted">Cylinder</span>
+                      <span className="text-white-50">Cylinder</span>
 
-                      <strong>{formData.cylinderSize}</strong>
+                      <strong className="text-white">{formData.cylinderSize}</strong>
                     </div>
 
                     <div className="d-flex justify-content-between mb-3">
-                      <span className="text-muted">Type</span>
+                      <span className="text-white-50">Type</span>
 
-                      <strong>{formData.cylinderType}</strong>
+                      <strong className="text-white">{formData.cylinderType}</strong>
                     </div>
 
                     <div className="d-flex justify-content-between mb-3">
-                      <span className="text-muted">Quantity</span>
+                      <span className="text-white-50">Quantity</span>
 
-                      <strong>{formData.quantity}</strong>
+                      <strong className="text-white">{formData.quantity}</strong>
                     </div>
 
                     <div className="d-flex justify-content-between mb-3">
-                      <span className="text-muted">Unit Price</span>
+                      <span className="text-white-50">Unit Price</span>
 
-                      <strong>Rs {unitPrice.toLocaleString()}</strong>
+                      <strong className="text-white">Rs {unitPrice.toLocaleString()}</strong>
                     </div>
 
                     <div className="d-flex justify-content-between mb-3">
-                      <span className="text-muted">Total Price</span>
+                      <span className="text-white-50">Total Price</span>
 
                       <strong
-                        className="fs-5"
-                        style={{ color: "#0d6efd" }}
+                        className="fs-5 text-warning"
                       >
                         Rs {totalPrice.toLocaleString()}
                       </strong>
                     </div>
 
                     <div className="d-flex justify-content-between mb-3">
-                      <span className="text-muted">Payment</span>
+                      <span className="text-white-50">Payment</span>
 
-                      <strong>{formData.paymentMethod}</strong>
+                      <strong className="text-white">{formData.paymentMethod}</strong>
                     </div>
 
-                    <hr />
+                    <hr className="border-secondary" />
 
                     <div
                       className="rounded-3 p-3 mb-4"
                       style={{
-                        background: "#fff8dd",
-                        border: "1px solid #ffe38c",
+                        background: "rgba(255,193,7,.1)",
+                        border: "1px solid rgba(255,193,7,.25)",
                       }}
                     >
-                      <small>
+                      <small className="text-white-50">
                         <i className="bi bi-shield-check text-success me-2"></i>
                         Please verify your contact and delivery details before
                         confirming.
