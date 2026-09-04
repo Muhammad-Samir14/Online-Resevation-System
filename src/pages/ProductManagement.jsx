@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import "bootstrap/dist/css/bootstrap.min.css";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -28,22 +27,17 @@ export default function ProductManagement() {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from("products")
-        .select("*")
-        .order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("products").select("*").order("created_at", { ascending: false });
       if (error) throw error;
       setProducts(data || []);
-      setLoading(false);
     } catch (err) {
       console.error("Error fetching products:", err);
+    } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
+  useEffect(() => { fetchProducts(); }, []);
 
   const handleCreate = () => {
     setEditingProduct(null);
@@ -53,14 +47,7 @@ export default function ProductManagement() {
 
   const handleEdit = (product) => {
     setEditingProduct(product);
-    reset({
-      name: product.name,
-      type: product.type,
-      weight: product.weight,
-      price: product.price,
-      stock: product.stock,
-      description: product.description || "",
-    });
+    reset({ name: product.name, type: product.type, weight: product.weight, price: product.price, stock: product.stock, description: product.description || "" });
     setIsModalOpen(true);
   };
 
@@ -68,35 +55,28 @@ export default function ProductManagement() {
     const productData = { ...data, price: Number(data.price), stock: Number(data.stock) };
     try {
       if (editingProduct) {
-        const { data: updated, error } = await supabase
-          .from("products")
-          .update(productData)
-          .eq("id", editingProduct.id)
-          .select();
+        const { data: updated, error } = await supabase.from("products").update(productData).eq("id", editingProduct.id).select();
         if (error) throw error;
         setProducts(products.map((p) => (p.id === editingProduct.id ? updated[0] : p)));
       } else {
-        const { data: created, error } = await supabase
-          .from("products")
-          .insert([productData])
-          .select();
+        const { data: created, error } = await supabase.from("products").insert([productData]).select();
         if (error) throw error;
         setProducts([...products, created[0]]);
       }
       setIsModalOpen(false);
     } catch (err) {
-      alert(err.message || "Error processing inventory modification data");
+      alert(err.message || "Error saving product");
     }
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to remove this product from inventory?")) {
+    if (window.confirm("Remove this product from inventory?")) {
       try {
         const { error } = await supabase.from("products").delete().eq("id", id);
         if (error) throw error;
         setProducts(products.filter((p) => p.id !== id));
       } catch (err) {
-        alert("Failed to delete product from backend server.");
+        alert("Failed to delete product.");
       }
     }
   };
@@ -104,160 +84,118 @@ export default function ProductManagement() {
   const formatPrice = (v) => `Rs. ${Number(v).toLocaleString()}`;
 
   const getStockBadge = (stock) => {
-    if (stock <= 5) return { color: "#dc3545", bg: "rgba(220, 53, 69, 0.1)" };
-    if (stock <= 15) return { color: "#e5aa00", bg: "rgba(255, 193, 7, 0.1)" };
-    return { color: "#198754", bg: "rgba(25, 135, 84, 0.1)" };
+    if (stock <= 5) return { color: "#dc3545", bg: "rgba(220,53,69,.12)" };
+    if (stock <= 15) return { color: "#ffc107", bg: "rgba(255,193,7,.12)" };
+    return { color: "#198754", bg: "rgba(25,135,84,.12)" };
   };
 
   if (loading) {
     return (
       <div className="d-flex justify-content-center align-items-center py-5">
-        <div className="spinner-border text-primary" role="status"></div>
+        <div className="spinner-border text-warning" role="status"></div>
       </div>
     );
   }
 
   return (
     <div>
-      <div
-        className="d-flex justify-content-between align-items-center mb-4 p-4 rounded-4 shadow-sm"
-        style={{ background: "#fff", border: "1px solid #dce5f0" }}
-      >
+      <div className="d-flex justify-content-between align-items-center mb-5 flex-wrap gap-3">
         <div>
-          <h3 className="fw-bold mb-1" style={{ color: "#10233f" }}>
-            <i className="bi bi-box-seam text-primary me-2"></i>
-            Cylinder Catalog
-          </h3>
-          <p className="text-muted small mb-0">Manage LPG sizes, weights, prices, and stock units</p>
+          <small className="text-warning fw-bold text-uppercase" style={{ letterSpacing: "1.5px", fontSize: ".75rem" }}>Inventory</small>
+          <h2 className="fw-bold text-white mb-1">Products / Stock</h2>
+          <p className="text-white-50 mb-0">Manage cylinder catalog, pricing, and stock levels</p>
         </div>
-        <button
-          className="btn btn-primary px-4 fw-bold"
-          onClick={handleCreate}
-          style={{ borderRadius: "10px" }}
-        >
-          <i className="bi bi-plus-lg me-1"></i>
-          Add New Product
+        <button className="btn btn-warning fw-bold px-4" onClick={handleCreate} style={{ borderRadius: "10px" }}>
+          <i className="bi bi-plus-lg me-1"></i>Add Product
         </button>
       </div>
 
-      <div
-        className="card shadow-sm overflow-hidden"
-        style={{ borderRadius: "16px", border: "1px solid #dce5f0" }}
-      >
-        <table className="table table-hover mb-0 align-middle">
-          <thead style={{ background: "#eef5ff" }}>
-            <tr style={{ borderBottom: "2px solid #d9e6f8" }}>
-              <th className="ps-4 py-3 text-uppercase fw-bold small" style={{ color: "#6c757d" }}>Product</th>
-              <th className="py-3 text-uppercase fw-bold small" style={{ color: "#6c757d" }}>Specifications</th>
-              <th className="py-3 text-center text-uppercase fw-bold small" style={{ color: "#6c757d" }}>Unit Price</th>
-              <th className="py-3 text-center text-uppercase fw-bold small" style={{ color: "#6c757d" }}>Stock</th>
-              <th className="pe-4 py-3 text-end text-uppercase fw-bold small" style={{ color: "#6c757d" }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {products.length === 0 ? (
+      <div className="stat-card p-0">
+        <div className="table-responsive">
+          <table className="table admin-table mb-0">
+            <thead>
               <tr>
-                <td colSpan="5" className="text-center py-4 text-muted">
-                  No products in the catalog yet.
-                </td>
+                <th>Product</th>
+                <th>Specifications</th>
+                <th className="text-center">Unit Price</th>
+                <th className="text-center">Stock</th>
+                <th className="text-end">Actions</th>
               </tr>
-            ) : (
-              products.map((p) => {
-                const badge = getStockBadge(p.stock);
-                return (
-                  <tr key={p.id} className="border-top" style={{ borderColor: "#eef3f8" }}>
-                    <td className="ps-4">
-                      <div className="fw-bold" style={{ color: "#10233f" }}>{p.name}</div>
-                      <small className="text-muted">{p.description || "No description added."}</small>
-                    </td>
-                    <td>
-                      <span className="badge bg-primary-subtle text-primary me-2">{p.type}</span>
-                      <span className="small fw-bold" style={{ color: "#0d6efd" }}>{p.weight}</span>
-                    </td>
-                    <td className="text-center fw-bold" style={{ color: "#10233f" }}>
-                      {formatPrice(p.price)}
-                    </td>
-                    <td className="text-center">
-                      <span
-                        className="badge rounded-pill px-3 py-2 border"
-                        style={{ backgroundColor: badge.bg, color: badge.color, borderColor: badge.color }}
-                      >
-                        {p.stock} Units
-                      </span>
-                    </td>
-                    <td className="pe-4 text-end">
-                      <button
-                        className="btn btn-sm me-1"
-                        style={{ background: "#fff8dd", color: "#e5aa00", border: "1px solid #ffe38c" }}
-                        onClick={() => handleEdit(p)}
-                        title="Edit"
-                      >
-                        <i className="bi bi-pencil-fill"></i>
-                      </button>
-                      <button
-                        className="btn btn-sm"
-                        style={{ background: "#fde8e8", color: "#dc3545", border: "1px solid #f5c2c7" }}
-                        onClick={() => handleDelete(p.id)}
-                        title="Remove"
-                      >
-                        <i className="bi bi-trash-fill"></i>
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {products.length === 0 ? (
+                <tr><td colSpan="5" className="text-center py-5 text-white-50"><i className="bi bi-box-seam fs-1 d-block mb-2"></i>No products yet.</td></tr>
+              ) : (
+                products.map((p) => {
+                  const badge = getStockBadge(p.stock);
+                  return (
+                    <tr key={p.id}>
+                      <td>
+                        <div className="fw-semibold text-white">{p.name}</div>
+                        <small className="text-white-50">{p.description || "—"}</small>
+                      </td>
+                      <td>
+                        <span className="badge me-2" style={{ background: "rgba(13,110,253,.12)", color: "#0d6efd", borderRadius: "8px" }}>{p.type}</span>
+                        <span className="small text-white-50">{p.weight}</span>
+                      </td>
+                      <td className="text-center fw-bold text-white">{formatPrice(p.price)}</td>
+                      <td className="text-center">
+                        <span className="badge px-3 py-2" style={{ backgroundColor: badge.bg, color: badge.color, borderRadius: "8px" }}>{p.stock} Units</span>
+                      </td>
+                      <td className="text-end">
+                        <button className="btn btn-sm me-1" style={{ background: "rgba(255,193,7,.12)", color: "#ffc107", border: "1px solid rgba(255,193,7,.25)", borderRadius: "8px" }} onClick={() => handleEdit(p)}><i className="bi bi-pencil-fill"></i></button>
+                        <button className="btn btn-sm" style={{ background: "rgba(220,53,69,.12)", color: "#dc3545", border: "1px solid rgba(220,53,69,.25)", borderRadius: "8px" }} onClick={() => handleDelete(p.id)}><i className="bi bi-trash-fill"></i></button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {isModalOpen && (
-        <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+        <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: "rgba(0,0,0,.6)" }}>
           <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content shadow-lg" style={{ borderRadius: "20px", border: "1px solid #dce5f0" }}>
+            <div className="modal-content" style={{ background: "#10233f", border: "1px solid rgba(255,255,255,.1)", borderRadius: "18px" }}>
               <form onSubmit={handleSubmit(onSubmit)}>
-                <div className="modal-header" style={{ borderBottom: "1px solid #eef3f8" }}>
-                  <h5 className="modal-title fw-bold" style={{ color: "#10233f" }}>
-                    {editingProduct ? "Modify Product" : "Register Catalog Item"}
-                  </h5>
-                  <button type="button" className="btn-close" onClick={() => setIsModalOpen(false)} />
+                <div className="modal-header border-bottom border-secondary border-opacity-25">
+                  <h5 className="modal-title fw-bold text-white">{editingProduct ? "Edit Product" : "Add Product"}</h5>
+                  <button type="button" className="btn-close btn-close-white" onClick={() => setIsModalOpen(false)}></button>
                 </div>
                 <div className="modal-body p-4">
                   <div className="row g-3">
                     <div className="col-12">
-                      <label className="form-label small fw-semibold text-muted">Product Name</label>
-                      <input className="form-control marwat-input" {...register("name")} placeholder="e.g. Domestic Cylinder" />
+                      <label className="form-label text-white-50 small fw-semibold">Product Name</label>
+                      <input className="form-control" style={{ background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.1)", color: "#fff" }} {...register("name")} placeholder="e.g. Domestic Cylinder" />
                       {errors.name && <small className="text-danger">{errors.name.message}</small>}
                     </div>
                     <div className="col-md-6">
-                      <label className="form-label small fw-semibold text-muted">Type</label>
-                      <input className="form-control marwat-input" {...register("type")} />
-                      {errors.type && <small className="text-danger">{errors.type.message}</small>}
+                      <label className="form-label text-white-50 small fw-semibold">Type</label>
+                      <input className="form-control" style={{ background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.1)", color: "#fff" }} {...register("type")} />
                     </div>
                     <div className="col-md-6">
-                      <label className="form-label small fw-semibold text-muted">Weight (e.g. 11.8 kg)</label>
-                      <input className="form-control marwat-input" {...register("weight")} />
-                      {errors.weight && <small className="text-danger">{errors.weight.message}</small>}
+                      <label className="form-label text-white-50 small fw-semibold">Weight</label>
+                      <input className="form-control" style={{ background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.1)", color: "#fff" }} {...register("weight")} />
                     </div>
                     <div className="col-md-6">
-                      <label className="form-label small fw-semibold text-muted">Price (Rs.)</label>
-                      <input type="number" className="form-control marwat-input" {...register("price", { valueAsNumber: true })} />
-                      {errors.price && <small className="text-danger">{errors.price.message}</small>}
+                      <label className="form-label text-white-50 small fw-semibold">Price (Rs.)</label>
+                      <input type="number" className="form-control" style={{ background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.1)", color: "#fff" }} {...register("price", { valueAsNumber: true })} />
                     </div>
                     <div className="col-md-6">
-                      <label className="form-label small fw-semibold text-muted">Stock Units</label>
-                      <input type="number" className="form-control marwat-input" {...register("stock", { valueAsNumber: true })} />
-                      {errors.stock && <small className="text-danger">{errors.stock.message}</small>}
+                      <label className="form-label text-white-50 small fw-semibold">Stock Units</label>
+                      <input type="number" className="form-control" style={{ background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.1)", color: "#fff" }} {...register("stock", { valueAsNumber: true })} />
                     </div>
                     <div className="col-12">
-                      <label className="form-label small fw-semibold text-muted">Description</label>
-                      <textarea rows="2" className="form-control marwat-input" {...register("description")} placeholder="Add product description..." />
+                      <label className="form-label text-white-50 small fw-semibold">Description</label>
+                      <textarea rows="2" className="form-control" style={{ background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.1)", color: "#fff" }} {...register("description")} />
                     </div>
                   </div>
                 </div>
-                <div className="modal-footer" style={{ borderTop: "1px solid #eef3f8" }}>
-                  <button type="button" className="btn btn-outline-secondary px-4" onClick={() => setIsModalOpen(false)}>Cancel</button>
-                  <button type="submit" className="btn btn-primary px-4">{editingProduct ? "Save Changes" : "Register Product"}</button>
+                <div className="modal-footer border-top border-secondary border-opacity-25">
+                  <button type="button" className="btn btn-outline-light" onClick={() => setIsModalOpen(false)}>Cancel</button>
+                  <button type="submit" className="btn btn-warning fw-bold">{editingProduct ? "Save Changes" : "Add Product"}</button>
                 </div>
               </form>
             </div>

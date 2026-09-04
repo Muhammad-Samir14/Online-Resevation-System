@@ -21,12 +21,10 @@ function PublicShopPage() {
   return (
     <>
       <Navbar />
-
       <main>
         <ShopNow />
         <HowItWorks />
       </main>
-
       <Footer />
     </>
   );
@@ -37,47 +35,38 @@ const route = createBrowserRouter([
     path: "/",
     element: <LandingPage />,
   },
-
   {
     path: "/about",
     element: <AboutUs />,
   },
-
   {
     path: "/services",
     element: <PublicShopPage />,
   },
-
   {
     path: "/shop",
     element: <ShopPage />,
   },
-
   {
     path: "/contact",
     element: <Contact />,
   },
-
   {
     path: "/register",
     element: <RegisterandLoginPage />,
   },
-
   {
     path: "/book-gas",
     element: <BookGasPage />,
   },
-
   {
     path: "/track-order",
     element: <TrackOrderPage />,
   },
-
   {
     path: "/admin-login",
     element: <AdminLoginPage />,
   },
-
   {
     path: "/admin",
     element: <AdminLayout />,

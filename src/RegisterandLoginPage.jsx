@@ -65,9 +65,6 @@ function RegisterandLoginPage() {
 
       if (error) throw error;
 
-      localStorage.setItem("user", JSON.stringify(authData.user));
-
-      alert(`Welcome back!`);
       window.location.href = "/shop";
     } catch (err) {
       console.error(err);

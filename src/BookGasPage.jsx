@@ -56,37 +56,30 @@ function BookGasPage() {
     const paramType = searchParams.get("type");
     const paramSize = searchParams.get("size");
     const paramQuantity = searchParams.get("quantity");
-    const savedUser = localStorage.getItem("user");
 
-    let parsedUser = null;
-    if (savedUser) {
-      try {
-        parsedUser = JSON.parse(savedUser);
-      } catch (error) {
-        console.error("Could not read saved user:", error);
-      }
-    }
-
-    setFormData((prev) => ({
-      ...prev,
-      fullName: parsedUser?.name || parsedUser?.fullName || "",
-      email: parsedUser?.email || "",
-      phoneNumber: parsedUser?.phoneNumber || "",
-      orderType:
-        service === "refill"
-          ? "Refill"
-          : service === "bulk"
-          ? "Bulk"
-          : "Domestic",
-      quantity:
-        service === "bulk"
-          ? 5
-          : paramQuantity
-          ? parseInt(paramQuantity, 10) || 1
-          : 1,
-      cylinderType: paramType || prev.cylinderType,
-      cylinderSize: paramSize || prev.cylinderSize,
-    }));
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setFormData((prev) => ({
+        ...prev,
+        fullName: user?.user_metadata?.full_name || user?.user_metadata?.name || "",
+        email: user?.email || "",
+        phoneNumber: user?.user_metadata?.phone_number || user?.user_metadata?.phone || "",
+        orderType:
+          service === "refill"
+            ? "Refill"
+            : service === "bulk"
+            ? "Bulk"
+            : "Domestic",
+        quantity:
+          service === "bulk"
+            ? 5
+            : paramQuantity
+            ? parseInt(paramQuantity, 10) || 1
+            : 1,
+        cylinderType: paramType || prev.cylinderType,
+        cylinderSize: paramSize || prev.cylinderSize,
+      }));
+    })();
   }, []);
 
   const handleInputChange = (e) => {
@@ -134,8 +127,11 @@ function BookGasPage() {
     e.preventDefault();
 
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+
       const { data, error } = await supabase.from("bookings").insert([
         {
+          user_id: user?.id || null,
           order_type: formData.orderType,
           full_name: formData.fullName,
           email: formData.email,
@@ -161,8 +157,46 @@ function BookGasPage() {
 
       if (error) throw error;
 
+      // Call edge function to send admin email notification
+      try {
+        const { supabaseUrl, supabaseAnonKey } = {
+          supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
+          supabaseAnonKey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+        };
+        await fetch(`${supabaseUrl}/functions/v1/send-order-notification`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${supabaseAnonKey}`,
+            apikey: supabaseAnonKey,
+          },
+          body: JSON.stringify({
+            order: {
+              id: data?.[0]?.id,
+              full_name: formData.fullName,
+              email: formData.email,
+              phone_number: formData.phoneNumber,
+              cylinder_type: formData.cylinderType,
+              cylinder_size: formData.cylinderSize,
+              quantity: formData.quantity,
+              unit_price: unitPrice,
+              total_price: totalPrice,
+              payment_method: formData.paymentMethod,
+              street_address: formData.streetAddress,
+              landmark: formData.landmark,
+              delivery_time_slot: formData.deliveryTimeSlot,
+              created_at: new Date().toISOString(),
+              status: "Pending",
+            },
+            adminEmail: "isamirkhan5616@gmail.com",
+          }),
+        });
+      } catch (notifErr) {
+        console.error("Notification send failed:", notifErr);
+      }
+
       alert("Booking confirmed successfully!");
-      console.log("Booking Response:", data);
+      window.location.href = "/track-order";
     } catch (error) {
       console.error(error);
       alert(
