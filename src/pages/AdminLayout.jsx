@@ -1,173 +1,387 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "../supabaseClient";
+import Dashboard from "./Dashboard";
 import CustomersManagement from "./CustomersManagement";
 import DeliveryPersonnelManagement from "./DeliveryPersonnelManagement";
 import ProductManagement from "./ProductManagement";
 import OrdersManagement from "./OrdersManagement";
 
 function AdminLayout() {
-  const [activePage, setActivePage] = useState("overview");
+  const [activePage, setActivePage] = useState("dashboard");
+  const [authChecked, setAuthChecked] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminEmail, setAdminEmail] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [toast, setToast] = useState(null);
   const navigate = useNavigate();
+  const toastTimerRef = useRef(null);
 
-  useEffect(() => {
-    const admin = localStorage.getItem("admin");
-    if (!admin) {
+  const checkAuth = useCallback(async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate("/admin-login");
+        return;
+      }
+      const role = user.app_metadata?.role;
+      if (role !== "admin") {
+        await supabase.auth.signOut();
+        navigate("/admin-login");
+        return;
+      }
+      setIsAdmin(true);
+      setAdminEmail(user.email || "");
+    } catch {
       navigate("/admin-login");
+    } finally {
+      setAuthChecked(true);
     }
   }, [navigate]);
 
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  // Load initial unread notifications (pending bookings created in last 24h)
+  const loadInitialNotifications = useCallback(async () => {
+    try {
+      const { data } = await supabase
+        .from("bookings")
+        .select("id, full_name, cylinder_size, quantity, total_price, status, created_at")
+        .order("created_at", { ascending: false })
+        .limit(10);
+      if (data) {
+        const unread = data.map((b) => ({ ...b, read: false }));
+        setNotifications(unread);
+      }
+    } catch (err) {
+      console.error("Error loading notifications:", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isAdmin) loadInitialNotifications();
+  }, [isAdmin, loadInitialNotifications]);
+
+  // Realtime subscription for new bookings
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    const channel = supabase
+      .channel("admin-new-orders")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "bookings" },
+        (payload) => {
+          const newOrder = payload.new;
+          // Add to notifications
+          setNotifications((prev) => [
+            { ...newOrder, read: false },
+            ...prev,
+          ]);
+
+          // Show toast
+          if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+          setToast({
+            id: newOrder.id,
+            full_name: newOrder.full_name,
+            cylinder_size: newOrder.cylinder_size,
+            quantity: newOrder.quantity,
+            total_price: newOrder.total_price,
+          });
+          toastTimerRef.current = setTimeout(() => setToast(null), 8000);
+
+          // Browser push notification
+          if ("Notification" in window && Notification.permission === "granted") {
+            try {
+              const n = new Notification("New Order Received", {
+                body: `${newOrder.full_name} — ${newOrder.cylinder_size} x${newOrder.quantity} — Rs ${Number(newOrder.total_price).toLocaleString()}`,
+                icon: "/logo.png",
+                tag: newOrder.id,
+              });
+              n.onclick = () => {
+                window.focus();
+                setActivePage("orders");
+                n.close();
+              };
+            } catch (e) {
+              console.error("Push notification error:", e);
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [isAdmin]);
+
+  // Request notification permission on mount
+  useEffect(() => {
+    if (isAdmin && "Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, [isAdmin]);
+
+  // Register service worker for push notifications
+  useEffect(() => {
+    if (isAdmin && "serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
+  }, [isAdmin]);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/admin-login");
+  };
+
+  const markAllRead = () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  };
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
   const menuItems = [
-    { id: "overview", label: "Dashboard", icon: "bi-speedometer2" },
-    { id: "customers", label: "Manage Customers", icon: "bi-people-fill" },
-    { id: "product", label: "Product Management", icon: "bi-box-seam" },
-    { id: "orders", label: "Order Management", icon: "bi-clipboard-data" },
-    { id: "delivery", label: "Delivery Management", icon: "bi-truck" },
+    { id: "dashboard", label: "Dashboard", icon: "bi-speedometer2" },
+    { id: "customers", label: "Customers", icon: "bi-people-fill" },
+    { id: "products", label: "Products / Stock", icon: "bi-box-seam" },
+    { id: "orders", label: "Orders", icon: "bi-clipboard-data" },
+    { id: "deliveries", label: "Deliveries", icon: "bi-truck" },
   ];
 
   const renderContent = () => {
     switch (activePage) {
-      case "delivery": return <DeliveryPersonnelManagement />;
       case "customers": return <CustomersManagement />;
-      case "product": return <ProductManagement />;
-      case "orders": return <OrdersManagement />;
-      default:
-        return (
-          <div>
-            <header
-              className="mb-5 d-flex justify-content-between align-items-center p-4 rounded-4 shadow-sm"
-              style={{ background: "#fff", border: "1px solid #dce5f0" }}
-            >
-              <div>
-                <h2 className="fw-bold mb-0" style={{ color: "#10233f" }}>
-                  Marwat Command Center
-                </h2>
-                <p className="text-muted mb-0 small">
-                  Operational intelligence &amp; monitoring
-                </p>
-              </div>
-              <span className="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 shadow-sm">
-                <i className="bi bi-circle-fill me-2" style={{ fontSize: "0.6rem" }}></i>
-                System Online
-              </span>
-            </header>
-
-            <div className="row g-4">
-              {[
-                { title: "Commercial", value: 120, trend: "+12%", color: "#0d6efd" },
-                { title: "Domestic", value: 340, trend: "+5%", color: "#198754" },
-                { title: "Industrial", value: 75, trend: "-2%", color: "#dc3545" },
-                { title: "Orders Today", value: 12, trend: "High", color: "#ffc107" },
-                { title: "Orders This Week", value: 100, trend: "Stable", color: "#0dcaf0" },
-                { title: "Total Revenue", value: "Rs. 950k", trend: "+18%", color: "#0d6efd" },
-              ].map((stat, idx) => (
-                <div key={idx} className="col-md-4">
-                  <div
-                    className="card h-100 shadow-sm position-relative overflow-hidden"
-                    style={{
-                      borderRadius: "16px",
-                      background: "#fff",
-                      border: "1px solid #dce5f0",
-                    }}
-                  >
-                    <div
-                      className="position-absolute top-0 end-0"
-                      style={{
-                        width: "80px",
-                        height: "80px",
-                        background: stat.color,
-                        filter: "blur(60px)",
-                        opacity: "0.12",
-                      }}
-                    ></div>
-                    <div className="card-body p-4">
-                      <div className="d-flex justify-content-between mb-3">
-                        <span
-                          className="text-uppercase fw-bold small"
-                          style={{ color: "#6c757d" }}
-                        >
-                          {stat.title}
-                        </span>
-                        <span
-                          className="small fw-bold"
-                          style={{ color: stat.color }}
-                        >
-                          {stat.trend}
-                        </span>
-                      </div>
-                      <h2 className="fw-bold mb-0" style={{ color: "#10233f" }}>
-                        {stat.value}
-                      </h2>
-                      <div
-                        className="progress mt-3"
-                        style={{ height: "4px", backgroundColor: "#eef3f8" }}
-                      >
-                        <div
-                          className="progress-bar"
-                          style={{ width: "70%", background: stat.color }}
-                        ></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
+      case "products": return <ProductManagement />;
+      case "orders": return <OrdersManagement onNavigate={setActivePage} />;
+      case "deliveries": return <DeliveryPersonnelManagement />;
+      default: return <Dashboard onNavigate={setActivePage} />;
     }
   };
+
+  if (!authChecked) {
+    return (
+      <div className="d-flex align-items-center justify-content-center vh-100" style={{ background: "#10233f" }}>
+        <div className="spinner-border text-warning" role="status"></div>
+      </div>
+    );
+  }
+
+  if (!isAdmin) return null;
 
   return (
     <div className="admin-wrapper">
       <style>{`
-        .admin-wrapper { display: flex; height: 100vh; width: 100vw; background-color: #f5f8fc; overflow: hidden; }
-        .sidebar { width: 260px; background: linear-gradient(180deg, #10233f 0%, #084298 100%); display: flex; flex-direction: column; padding: 1.5rem; }
-        .content-area { flex-grow: 1; overflow-y: auto; padding: 2.5rem; background-color: #f5f8fc; }
+        * { box-sizing: border-box; }
+        .admin-wrapper { display: flex; height: 100vh; width: 100vw; background-color: #0a1929; overflow: hidden; }
+        .sidebar {
+          width: 260px;
+          background: linear-gradient(180deg, #0a1929 0%, #10233f 100%);
+          display: flex;
+          flex-direction: column;
+          padding: 1.5rem 1rem;
+          border-right: 1px solid rgba(255,255,255,.06);
+          flex-shrink: 0;
+          z-index: 1050;
+        }
+        .content-area { flex-grow: 1; overflow-y: auto; padding: 2rem; background-color: #0a1929; }
+        .nav-item-admin {
+          display: flex; align-items: center; gap: .75rem;
+          padding: .75rem 1rem; border-radius: 10px; border: none;
+          background: transparent; color: rgba(255,255,255,.5);
+          font-weight: 500; width: 100%; text-align: left;
+          transition: all .2s ease; cursor: pointer; font-size: .95rem;
+        }
+        .nav-item-admin:hover { background: rgba(255,255,255,.06); color: rgba(255,255,255,.85); }
+        .nav-item-admin.active {
+          background: rgba(13,110,253,.15);
+          color: #fff;
+          border-left: 3px solid #0d6efd;
+        }
+        .nav-item-admin.active i { color: #ffc107; }
+        .stat-card {
+          background: linear-gradient(135deg, #10233f 0%, #0a1929 100%);
+          border: 1px solid rgba(255,255,255,.08);
+          border-radius: 16px; padding: 1.5rem;
+          transition: transform .2s ease, box-shadow .2s ease;
+        }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,.3); }
+        .admin-table-wrap {
+          background: #10233f; border: 1px solid rgba(255,255,255,.08);
+          border-radius: 16px; overflow: hidden;
+        }
+        .admin-table thead th {
+          background: rgba(255,255,255,.04); color: rgba(255,255,255,.5);
+          font-size: .75rem; text-transform: uppercase; letter-spacing: .5px;
+          font-weight: 700; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,.08);
+        }
+        .admin-table tbody td {
+          color: rgba(255,255,255,.85); padding: 1rem;
+          border-bottom: 1px solid rgba(255,255,255,.04); vertical-align: middle;
+        }
+        .admin-table tbody tr:hover { background: rgba(255,255,255,.03); }
+        .notif-dropdown {
+          position: absolute; top: 100%; right: 0; margin-top: .5rem;
+          width: 360px; max-height: 480px; overflow-y: auto;
+          background: #10233f; border: 1px solid rgba(255,255,255,.1);
+          border-radius: 14px; box-shadow: 0 20px 60px rgba(0,0,0,.5);
+          z-index: 1100;
+        }
+        .notif-item {
+          padding: 1rem; border-bottom: 1px solid rgba(255,255,255,.05);
+          cursor: pointer; transition: background .15s;
+        }
+        .notif-item:hover { background: rgba(255,255,255,.04); }
+        .notif-item.unread { border-left: 3px solid #ffc107; }
+        .toast-popup {
+          position: fixed; bottom: 24px; right: 24px;
+          background: #10233f; border: 1px solid rgba(255,255,255,.1);
+          border-left: 4px solid #ffc107; border-radius: 14px;
+          padding: 1rem 1.25rem; box-shadow: 0 20px 60px rgba(0,0,0,.5);
+          z-index: 1200; max-width: 380px; animation: slideIn .3s ease;
+        }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @media (max-width: 991px) {
+          .sidebar { position: fixed; left: 0; top: 0; height: 100%; transform: translateX(-100%); transition: transform .3s; }
+          .sidebar.open { transform: translateX(0); }
+          .content-area { padding: 1rem; }
+        }
       `}</style>
 
-      <aside className="sidebar">
-        <div className="mb-5 px-2">
-          <h4 className="fw-bold text-white mb-0" style={{ letterSpacing: "1px" }}>
-            MARWAT GAS
-          </h4>
-          <small className="text-warning fw-bold">Admin Suite</small>
+      {/* Sidebar */}
+      <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
+        <div className="mb-5 px-2 d-flex align-items-center justify-content-between">
+          <div>
+            <h4 className="fw-bold text-white mb-0" style={{ letterSpacing: "1px", fontSize: "1.1rem" }}>
+              MARWAT GAS
+            </h4>
+            <small className="text-warning fw-bold">Admin Suite</small>
+          </div>
+          <button className="btn btn-sm text-white-50 d-lg-none" onClick={() => setSidebarOpen(false)}>
+            <i className="bi bi-x-lg"></i>
+          </button>
         </div>
 
-        <nav className="nav nav-pills flex-column mb-auto">
+        <nav className="d-flex flex-column gap-1 mb-auto">
           {menuItems.map((item) => (
             <button
               key={item.id}
-              className={`nav-link text-start d-flex align-items-center py-3 mb-1 border-0 ${
-                activePage === item.id
-                  ? "active text-white shadow-sm"
-                  : "text-white-50"
-              }`}
-              onClick={() => setActivePage(item.id)}
-              style={{
-                borderRadius: "10px",
-                transition: "0.25s",
-                background:
-                  activePage === item.id ? "rgba(255,255,255,.15)" : "transparent",
-              }}
+              className={`nav-item-admin ${activePage === item.id ? "active" : ""}`}
+              onClick={() => { setActivePage(item.id); setSidebarOpen(false); }}
             >
-              <i className={`bi ${item.icon} me-3 fs-5`}></i>
-              <span className="fw-medium">{item.label}</span>
+              <i className={`bi ${item.icon}`} style={{ fontSize: "1.1rem" }}></i>
+              <span>{item.label}</span>
             </button>
           ))}
         </nav>
 
-        <div className="mt-auto pt-4 border-top border-secondary">
-          <a
-            href="/"
-            className="btn btn-warning w-100 py-2 border-0 fw-bold shadow-sm"
-            style={{ borderRadius: "10px" }}
+        <div className="mt-auto pt-4 border-top border-secondary border-opacity-25">
+          <div className="px-2 mb-3">
+            <small className="text-white-50 d-block text-truncate" style={{ fontSize: ".75rem" }}>
+              <i className="bi bi-person-circle me-1"></i>{adminEmail}
+            </small>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="nav-item-admin"
+            style={{ color: "#dc3545" }}
           >
-            <i className="bi bi-box-arrow-left me-2"></i>
-            Exit to Home
-          </a>
+            <i className="bi bi-box-arrow-left" style={{ fontSize: "1.1rem" }}></i>
+            <span>Logout</span>
+          </button>
         </div>
       </aside>
 
-      <main className="content-area">{renderContent()}</main>
+      {/* Main content */}
+      <main className="content-area">
+        {/* Mobile header */}
+        <div className="d-flex align-items-center justify-content-between mb-4 d-lg-none">
+          <button className="btn btn-outline-light btn-sm" onClick={() => setSidebarOpen(true)}>
+            <i className="bi bi-list fs-5"></i>
+          </button>
+          <span className="text-white-50 small">Marwat Gas Admin</span>
+          <div style={{ width: "40px" }}></div>
+        </div>
+
+        {/* Desktop notification bell */}
+        <div className="d-flex justify-content-end mb-3 position-relative d-none d-lg-flex">
+          <div className="position-relative">
+            <button
+              className="btn btn-outline-light btn-sm position-relative"
+              onClick={() => { setShowNotifications(!showNotifications); if (!showNotifications) markAllRead(); }}
+              style={{ borderRadius: "10px" }}
+            >
+              <i className="bi bi-bell-fill"></i>
+              {unreadCount > 0 && (
+                <span
+                  className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning"
+                  style={{ fontSize: ".65rem", minWidth: "18px" }}
+                >
+                  {unreadCount}
+                </span>
+              )}
+            </button>
+
+            {showNotifications && (
+              <div className="notif-dropdown">
+                <div className="p-3 border-bottom border-secondary border-opacity-25">
+                  <strong className="text-white">Notifications</strong>
+                </div>
+                {notifications.length === 0 ? (
+                  <div className="p-4 text-center text-white-50 small">No notifications</div>
+                ) : (
+                  notifications.map((n) => (
+                    <div
+                      key={n.id}
+                      className={`notif-item ${!n.read ? "unread" : ""}`}
+                      onClick={() => { setActivePage("orders"); setShowNotifications(false); }}
+                    >
+                      <div className="d-flex justify-content-between align-items-start">
+                        <div>
+                          <div className="text-white fw-semibold small">{n.full_name}</div>
+                          <div className="text-white-50" style={{ fontSize: ".8rem" }}>
+                            {n.cylinder_size} × {n.quantity} — Rs {Number(n.total_price || 0).toLocaleString()}
+                          </div>
+                        </div>
+                        {!n.read && <span className="badge bg-warning" style={{ fontSize: ".6rem" }}>New</span>}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {renderContent()}
+      </main>
+
+      {/* Toast notification */}
+      {toast && (
+        <div className="toast-popup" onClick={() => { setActivePage("orders"); setToast(null); }}>
+          <div className="d-flex align-items-start gap-3">
+            <div
+              className="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+              style={{ width: "40px", height: "40px", background: "rgba(255,193,7,.15)" }}
+            >
+              <i className="bi bi-bell-fill text-warning"></i>
+            </div>
+            <div>
+              <div className="text-white fw-bold small">New Order Received</div>
+              <div className="text-white-50" style={{ fontSize: ".85rem" }}>
+                {toast.full_name} — {toast.cylinder_size} × {toast.quantity}
+              </div>
+              <div className="text-warning fw-bold" style={{ fontSize: ".85rem" }}>
+                Rs {Number(toast.total_price || 0).toLocaleString()}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

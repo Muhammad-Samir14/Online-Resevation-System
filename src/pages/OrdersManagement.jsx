@@ -1,336 +1,336 @@
-import React, { useState, useEffect } from "react";
-import "bootstrap/dist/css/bootstrap.min.css";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
+import React, { useState, useEffect, useCallback } from "react";
 import { supabase } from "../supabaseClient";
 
-const orderSchema = z.object({
-  customerName: z.string().min(2, "Name required"),
-  product: z.string().min(2, "Product required"),
-  quantity: z.preprocess((val) => Number(val), z.number().min(1)),
-  totalAmount: z.preprocess((val) => Number(val), z.number().min(0)),
-  status: z.enum(["Pending", "Processing", "Delivered", "Cancelled"]),
-  orderDate: z.string(),
-  deliveryAddress: z.string().min(3, "Address required"),
-});
+const STATUS_OPTIONS = ["Pending", "Confirmed", "Out for Delivery", "Delivered", "Cancelled"];
+const FILTER_OPTIONS = ["All", ...STATUS_OPTIONS];
 
-export default function OrdersManagement() {
+export default function OrdersManagement({ onNavigate }) {
   const [orders, setOrders] = useState([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingOrder, setEditingOrder] = useState(null);
-  const [trackingOrder, setTrackingOrder] = useState(null);
-  const [etaMinutes, setEtaMinutes] = useState(30);
-  const [trackStatus, setTrackStatus] = useState("Pending");
-  const [savingTrack, setSavingTrack] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("All");
+  const [viewOrder, setViewOrder] = useState(null);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
 
-  const { register, handleSubmit, reset } = useForm({
-    resolver: zodResolver(orderSchema),
-    defaultValues: {
-      customerName: "", product: "Domestic Cylinder", quantity: 1,
-      totalAmount: 0, status: "Pending",
-      orderDate: new Date().toISOString().split("T")[0], deliveryAddress: ""
-    },
-  });
-
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
+      setLoading(true);
       const { data, error } = await supabase
-        .from("orders")
+        .from("bookings")
         .select("*")
         .order("created_at", { ascending: false });
       if (error) throw error;
       setOrders(data || []);
     } catch (err) {
       console.error("Error fetching orders:", err);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchOrders();
-  }, []);
+  }, [fetchOrders]);
 
-  const handleCreate = () => {
-    setEditingOrder(null);
-    reset();
-    setIsModalOpen(true);
-  };
-
-  const onSubmit = async (data) => {
-    try {
-      const { data: created, error } = await supabase
-        .from("orders")
-        .insert([data])
-        .select();
-      if (error) throw error;
-      setOrders([...orders, created[0]]);
-      setIsModalOpen(false);
-      alert("Order successfully saved!");
-    } catch (err) {
-      console.error("Error saving order:", err);
-      alert(err.message || "Error saving order");
-    }
-  };
-
-  const openTrackingModal = (order) => {
-    setTrackingOrder(order);
-    setEtaMinutes(order.estimated_delivery_minutes || 30);
-    setTrackStatus(order.status || "Pending");
-  };
-
-  const saveTracking = async () => {
-    if (!trackingOrder) return;
-    setSavingTrack(true);
+  const updateStatus = async (orderId, newStatus) => {
+    setUpdatingStatus(true);
     try {
       const { data, error } = await supabase
-        .from("orders")
-        .update({
-          status: trackStatus,
-          estimated_delivery_minutes: etaMinutes,
-          eta_set_at: new Date().toISOString(),
-        })
-        .eq("id", trackingOrder.id)
+        .from("bookings")
+        .update({ status: newStatus })
+        .eq("id", orderId)
         .select();
       if (error) throw error;
-      setOrders(orders.map((o) => (o.id === trackingOrder.id ? data[0] : o)));
-      setTrackingOrder(null);
+      setOrders(orders.map((o) => (o.id === orderId ? data[0] : o)));
+      if (viewOrder?.id === orderId) setViewOrder(data[0]);
     } catch (err) {
-      alert(err.message || "Error updating tracking info");
+      alert(err.message || "Error updating order status");
     } finally {
-      setSavingTrack(false);
+      setUpdatingStatus(false);
     }
   };
 
   const getStatusStyle = (status) => {
     switch (status) {
-      case "Pending": return { color: "#e5aa00", bg: "rgba(255, 193, 7, 0.1)" };
-      case "Processing": return { color: "#0d6efd", bg: "rgba(13, 110, 253, 0.1)" };
-      case "Delivered": return { color: "#198754", bg: "rgba(25, 135, 84, 0.1)" };
-      case "Cancelled": return { color: "#dc3545", bg: "rgba(220, 53, 69, 0.1)" };
-      default: return { color: "#6c757d", bg: "rgba(108, 117, 125, 0.1)" };
+      case "Pending": return { color: "#ffc107", bg: "rgba(255,193,7,.12)" };
+      case "Confirmed": return { color: "#0d6efd", bg: "rgba(13,110,253,.12)" };
+      case "Out for Delivery": return { color: "#0dcaf0", bg: "rgba(13,202,240,.12)" };
+      case "Delivered": return { color: "#198754", bg: "rgba(25,135,84,.12)" };
+      case "Cancelled": return { color: "#dc3545", bg: "rgba(220,53,69,.12)" };
+      default: return { color: "#6c757d", bg: "rgba(108,117,125,.12)" };
     }
   };
 
-  const formatCurrency = (val) => `Rs. ${Number(val).toLocaleString()}`;
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "—";
+    return new Date(dateStr).toLocaleString("en-US", {
+      month: "short", day: "numeric", year: "numeric",
+      hour: "2-digit", minute: "2-digit",
+    });
+  };
+
+  const filteredOrders = filter === "All" ? orders : orders.filter((o) => o.status === filter);
+
+  const filterCounts = FILTER_OPTIONS.reduce((acc, f) => {
+    acc[f] = f === "All" ? orders.length : orders.filter((o) => o.status === f).length;
+    return acc;
+  }, {});
+
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center py-5">
+        <div className="spinner-border text-warning" role="status"></div>
+      </div>
+    );
+  }
 
   return (
     <div>
-      <div
-        className="d-flex justify-content-between align-items-center mb-4 p-4 rounded-4 shadow-sm"
-        style={{ background: "#fff", border: "1px solid #dce5f0" }}
-      >
-        <div>
-          <h3 className="fw-bold mb-1" style={{ color: "#10233f" }}>
-            <i className="bi bi-clipboard-data text-primary me-2"></i>
-            Order Pipeline
-          </h3>
-          <p className="text-muted small mb-0">Track cylinder bookings and fulfillment status</p>
-        </div>
-        <button
-          className="btn btn-primary px-4 fw-bold"
-          onClick={handleCreate}
-          style={{ borderRadius: "10px" }}
-        >
-          <i className="bi bi-plus-lg me-1"></i>
-          Create Order
-        </button>
+      <div className="mb-5">
+        <small className="text-warning fw-bold text-uppercase" style={{ letterSpacing: "1.5px", fontSize: ".75rem" }}>
+          Order Management
+        </small>
+        <h2 className="fw-bold text-white mb-1">Orders</h2>
+        <p className="text-white-50 mb-0">View and manage all customer bookings</p>
       </div>
 
-      <div
-        className="card shadow-sm overflow-hidden"
-        style={{ borderRadius: "16px", border: "1px solid #dce5f0" }}
-      >
-        <table className="table table-hover mb-0 align-middle">
-          <thead style={{ background: "#eef5ff" }}>
-            <tr style={{ borderBottom: "2px solid #d9e6f8" }}>
-              <th className="ps-4 py-3 text-uppercase fw-bold small" style={{ color: "#6c757d" }}>Customer</th>
-              <th className="py-3 text-uppercase fw-bold small" style={{ color: "#6c757d" }}>Product</th>
-              <th className="py-3 text-center text-uppercase fw-bold small" style={{ color: "#6c757d" }}>Amount</th>
-              <th className="py-3 text-center text-uppercase fw-bold small" style={{ color: "#6c757d" }}>Status</th>
-              <th className="py-3 text-center text-uppercase fw-bold small" style={{ color: "#6c757d" }}>ETA</th>
-              <th className="pe-4 py-3 text-end text-uppercase fw-bold small" style={{ color: "#6c757d" }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {orders.length === 0 ? (
+      {/* Filter tabs */}
+      <div className="d-flex flex-wrap gap-2 mb-4">
+        {FILTER_OPTIONS.map((f) => (
+          <button
+            key={f}
+            className="btn btn-sm"
+            onClick={() => setFilter(f)}
+            style={{
+              borderRadius: "10px",
+              fontWeight: 600,
+              fontSize: ".85rem",
+              padding: ".5rem 1rem",
+              background: filter === f ? "rgba(13,110,253,.2)" : "rgba(255,255,255,.05)",
+              color: filter === f ? "#0d6efd" : "rgba(255,255,255,.6)",
+              border: filter === f ? "1px solid rgba(13,110,253,.4)" : "1px solid rgba(255,255,255,.08)",
+            }}
+          >
+            {f}
+            <span className="badge bg-secondary ms-2" style={{ fontSize: ".65rem" }}>
+              {filterCounts[f]}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* Orders table */}
+      <div className="stat-card p-0">
+        <div className="table-responsive">
+          <table className="table admin-table mb-0">
+            <thead>
               <tr>
-                <td colSpan="6" className="text-center py-4 text-muted">
-                  No orders found.
-                </td>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Cylinder</th>
+                <th className="text-center">Qty</th>
+                <th className="text-center">Total</th>
+                <th className="text-center">Payment</th>
+                <th className="text-center">Status</th>
+                <th className="text-center">Date</th>
+                <th className="text-end">Action</th>
               </tr>
-            ) : (
-              orders.map((order) => {
-                const style = getStatusStyle(order.status);
-                return (
-                  <tr key={order.id} className="border-top" style={{ borderColor: "#eef3f8" }}>
-                    <td className="ps-4">
-                      <div className="fw-bold" style={{ color: "#10233f" }}>{order.customerName}</div>
-                      <small className="text-muted">{order.deliveryAddress}</small>
-                    </td>
-                    <td style={{ color: "#172033" }}>{order.product}</td>
-                    <td className="text-center fw-bold" style={{ color: "#0d6efd" }}>{formatCurrency(order.totalAmount)}</td>
-                    <td className="text-center">
-                      <span
-                        className="badge border px-3 py-2"
-                        style={{ backgroundColor: style.bg, color: style.color, borderColor: style.color }}
-                      >
-                        {order.status}
-                      </span>
-                    </td>
-                    <td className="text-center">
-                      {order.estimated_delivery_minutes ? (
-                        <span className="fw-semibold" style={{ color: "#0d6efd" }}>
-                          {order.estimated_delivery_minutes} min
+            </thead>
+            <tbody>
+              {filteredOrders.length === 0 ? (
+                <tr>
+                  <td colSpan="9" className="text-center py-5 text-white-50">
+                    <i className="bi bi-inbox fs-1 d-block mb-2"></i>
+                    No orders found.
+                  </td>
+                </tr>
+              ) : (
+                filteredOrders.map((order) => {
+                  const style = getStatusStyle(order.status);
+                  return (
+                    <tr key={order.id}>
+                      <td className="text-white-50 small" style={{ fontFamily: "monospace" }}>
+                        #{order.id?.slice(0, 8)}
+                      </td>
+                      <td>
+                        <div className="fw-semibold text-white">{order.full_name}</div>
+                        <small className="text-white-50">{order.phone_number}</small>
+                      </td>
+                      <td>{order.cylinder_size}</td>
+                      <td className="text-center">{order.quantity}</td>
+                      <td className="text-center fw-bold text-warning">
+                        Rs {Number(order.total_price || 0).toLocaleString()}
+                      </td>
+                      <td className="text-center text-white-50 small">{order.payment_method}</td>
+                      <td className="text-center">
+                        <span
+                          className="badge px-3 py-2"
+                          style={{ backgroundColor: style.bg, color: style.color, borderRadius: "8px" }}
+                        >
+                          {order.status}
                         </span>
-                      ) : (
-                        <span className="text-muted small">Not set</span>
-                      )}
-                    </td>
-                    <td className="pe-4 text-end">
-                      <button
-                        className="btn btn-sm"
-                        style={{ background: "#eef5ff", color: "#0d6efd", border: "1px solid #cfe0f5" }}
-                        onClick={() => openTrackingModal(order)}
-                        title="Set tracking info"
-                      >
-                        <i className="bi bi-stopwatch me-1"></i>
-                        Set ETA
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+                      </td>
+                      <td className="text-center text-white-50 small">{formatDate(order.created_at)}</td>
+                      <td className="text-end">
+                        <button
+                          className="btn btn-sm"
+                          style={{ background: "rgba(13,110,253,.15)", color: "#0d6efd", border: "1px solid rgba(13,110,253,.3)", borderRadius: "8px" }}
+                          onClick={() => setViewOrder(order)}
+                        >
+                          <i className="bi bi-eye me-1"></i>
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {/* Create order modal */}
-      {isModalOpen && (
-        <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content shadow-lg" style={{ borderRadius: "20px", border: "1px solid #dce5f0" }}>
-              <form onSubmit={handleSubmit(onSubmit)}>
-                <div className="modal-header" style={{ borderBottom: "1px solid #eef3f8" }}>
-                  <h5 className="modal-title fw-bold" style={{ color: "#10233f" }}>Create Order</h5>
-                  <button type="button" className="btn-close" onClick={() => setIsModalOpen(false)} />
+      {/* View / Process order modal */}
+      {viewOrder && (
+        <>
+          <div
+            className="modal show d-block"
+            tabIndex="-1"
+            style={{ backgroundColor: "rgba(0,0,0,.6)" }}
+            onClick={() => setViewOrder(null)}
+          >
+            <div className="modal-dialog modal-dialog-centered modal-lg" onClick={(e) => e.stopPropagation()}>
+              <div
+                className="modal-content"
+                style={{
+                  background: "#10233f",
+                  border: "1px solid rgba(255,255,255,.1)",
+                  borderRadius: "18px",
+                }}
+              >
+                <div className="modal-header border-bottom border-secondary border-opacity-25">
+                  <h5 className="modal-title fw-bold text-white">
+                    <i className="bi bi-clipboard-data text-warning me-2"></i>
+                    Order #{viewOrder.id?.slice(0, 8)}
+                  </h5>
+                  <button
+                    type="button"
+                    className="btn-close btn-close-white"
+                    onClick={() => setViewOrder(null)}
+                  ></button>
                 </div>
+
                 <div className="modal-body p-4">
-                  <div className="row g-3">
+                  <div className="row g-4">
+                    {/* Customer info */}
                     <div className="col-md-6">
-                      <label className="form-label small fw-semibold text-muted">Customer Name</label>
-                      <input className="form-control marwat-input" {...register("customerName")} placeholder="Customer name" />
+                      <div className="text-white-50 text-uppercase fw-bold mb-2" style={{ fontSize: ".7rem", letterSpacing: ".5px" }}>
+                        Customer Information
+                      </div>
+                      <div className="text-white mb-1"><strong>Name:</strong> {viewOrder.full_name}</div>
+                      <div className="text-white-50 mb-1"><strong>Email:</strong> {viewOrder.email || "—"}</div>
+                      <div className="text-white-50 mb-1"><strong>Phone:</strong> {viewOrder.phone_number || "—"}</div>
+                      <div className="text-white-50"><strong>Order Type:</strong> {viewOrder.order_type}</div>
                     </div>
+
+                    {/* Order details */}
                     <div className="col-md-6">
-                      <label className="form-label small fw-semibold text-muted">Product</label>
-                      <input className="form-control marwat-input" {...register("product")} placeholder="Product" />
+                      <div className="text-white-50 text-uppercase fw-bold mb-2" style={{ fontSize: ".7rem", letterSpacing: ".5px" }}>
+                        Order Details
+                      </div>
+                      <div className="text-white mb-1"><strong>Cylinder:</strong> {viewOrder.cylinder_type} {viewOrder.cylinder_size}</div>
+                      <div className="text-white-50 mb-1"><strong>Quantity:</strong> {viewOrder.quantity}</div>
+                      <div className="text-white-50 mb-1"><strong>Unit Price:</strong> Rs {Number(viewOrder.unit_price || 0).toLocaleString()}</div>
+                      <div className="text-warning fw-bold"><strong>Total:</strong> Rs {Number(viewOrder.total_price || 0).toLocaleString()}</div>
                     </div>
-                    <div className="col-md-4">
-                      <label className="form-label small fw-semibold text-muted">Quantity</label>
-                      <input type="number" className="form-control marwat-input" {...register("quantity")} />
+
+                    {/* Delivery info */}
+                    <div className="col-12">
+                      <div className="text-white-50 text-uppercase fw-bold mb-2" style={{ fontSize: ".7rem", letterSpacing: ".5px" }}>
+                        Delivery Information
+                      </div>
+                      <div className="text-white mb-1"><strong>Address:</strong> {viewOrder.street_address || "—"}</div>
+                      <div className="text-white-50 mb-1"><strong>Landmark:</strong> {viewOrder.landmark || "—"}</div>
+                      <div className="text-white-50"><strong>Time Slot:</strong> {viewOrder.delivery_time_slot || "—"}</div>
                     </div>
-                    <div className="col-md-4">
-                      <label className="form-label small fw-semibold text-muted">Total Amount</label>
-                      <input type="number" className="form-control marwat-input" {...register("totalAmount")} />
+
+                    {/* Payment info */}
+                    <div className="col-12">
+                      <div className="text-white-50 text-uppercase fw-bold mb-2" style={{ fontSize: ".7rem", letterSpacing: ".5px" }}>
+                        Payment
+                      </div>
+                      <div className="text-white mb-1"><strong>Method:</strong> {viewOrder.payment_method}</div>
+                      {viewOrder.sender_name && (
+                        <div className="text-white-50 mb-1"><strong>Sender:</strong> {viewOrder.sender_name} ({viewOrder.sender_number})</div>
+                      )}
+                      {viewOrder.transaction_id && (
+                        <div className="text-white-50 mb-1"><strong>Transaction ID:</strong> {viewOrder.transaction_id}</div>
+                      )}
+                      {viewOrder.amount_sent && (
+                        <div className="text-white-50"><strong>Amount Sent:</strong> Rs {Number(viewOrder.amount_sent).toLocaleString()}</div>
+                      )}
                     </div>
-                    <div className="col-md-4">
-                      <label className="form-label small fw-semibold text-muted">Status</label>
-                      <select className="form-select marwat-input" {...register("status")}>
-                        <option>Pending</option>
-                        <option>Processing</option>
-                        <option>Delivered</option>
-                        <option>Cancelled</option>
-                      </select>
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label small fw-semibold text-muted">Order Date</label>
-                      <input type="date" className="form-control marwat-input" {...register("orderDate")} />
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label small fw-semibold text-muted">Delivery Address</label>
-                      <input className="form-control marwat-input" {...register("deliveryAddress")} placeholder="Address" />
+
+                    {viewOrder.additional_notes && (
+                      <div className="col-12">
+                        <div className="text-white-50 text-uppercase fw-bold mb-2" style={{ fontSize: ".7rem", letterSpacing: ".5px" }}>
+                          Additional Notes
+                        </div>
+                        <div className="text-white-50">{viewOrder.additional_notes}</div>
+                      </div>
+                    )}
+
+                    {/* Status management */}
+                    <div className="col-12">
+                      <div
+                        className="p-3 rounded-3"
+                        style={{ background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.08)" }}
+                      >
+                        <label className="form-label text-white-50 fw-bold mb-3" style={{ fontSize: ".8rem" }}>
+                          Update Order Status
+                        </label>
+                        <div className="d-flex flex-wrap gap-2">
+                          {STATUS_OPTIONS.map((s) => {
+                            const style = getStatusStyle(s);
+                            const isActive = viewOrder.status === s;
+                            return (
+                              <button
+                                key={s}
+                                disabled={updatingStatus}
+                                className="btn btn-sm"
+                                style={{
+                                  borderRadius: "8px",
+                                  fontWeight: 600,
+                                  fontSize: ".8rem",
+                                  padding: ".5rem 1rem",
+                                  background: isActive ? style.bg : "rgba(255,255,255,.04)",
+                                  color: isActive ? style.color : "rgba(255,255,255,.5)",
+                                  border: isActive ? `1px solid ${style.color}` : "1px solid rgba(255,255,255,.08)",
+                                }}
+                                onClick={() => updateStatus(viewOrder.id, s)}
+                              >
+                                {s}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
-                <div className="modal-footer" style={{ borderTop: "1px solid #eef3f8" }}>
-                  <button type="button" className="btn btn-outline-secondary px-4" onClick={() => setIsModalOpen(false)}>Cancel</button>
-                  <button type="submit" className="btn btn-primary px-4">Save Order</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* Tracking / ETA modal */}
-      {trackingOrder && (
-        <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content shadow-lg" style={{ borderRadius: "20px", border: "1px solid #dce5f0" }}>
-              <div className="modal-header" style={{ borderBottom: "1px solid #eef3f8" }}>
-                <h5 className="modal-title fw-bold" style={{ color: "#10233f" }}>
-                  <i className="bi bi-stopwatch me-2 text-primary"></i>
-                  Set Tracking Info
-                </h5>
-                <button type="button" className="btn-close" onClick={() => setTrackingOrder(null)} />
-              </div>
-              <div className="modal-body p-4">
-                <div className="mb-4">
-                  <div className="fw-bold mb-1" style={{ color: "#10233f" }}>{trackingOrder.customerName}</div>
-                  <small className="text-muted">{trackingOrder.product} — {formatCurrency(trackingOrder.totalAmount)}</small>
+                <div className="modal-footer border-top border-secondary border-opacity-25">
+                  <button
+                    type="button"
+                    className="btn btn-outline-light"
+                    onClick={() => setViewOrder(null)}
+                  >
+                    Close
+                  </button>
                 </div>
-
-                <label className="form-label small fw-semibold text-muted">Order Status</label>
-                <select
-                  className="form-select marwat-input mb-4"
-                  value={trackStatus}
-                  onChange={(e) => setTrackStatus(e.target.value)}
-                >
-                  <option value="Pending">Pending</option>
-                  <option value="Processing">Processing</option>
-                  <option value="Out for Delivery">Out for Delivery</option>
-                  <option value="Delivered">Delivered</option>
-                  <option value="Cancelled">Cancelled</option>
-                </select>
-
-                <label className="form-label small fw-semibold text-muted">Estimated Delivery Time (minutes)</label>
-                <div className="d-flex gap-2 mb-3 flex-wrap">
-                  {[30, 45, 60].map((preset) => (
-                    <button
-                      key={preset}
-                      type="button"
-                      className="btn"
-                      style={{
-                        borderRadius: "10px",
-                        fontWeight: 600,
-                        background: etaMinutes === preset ? "#0d6efd" : "#eef5ff",
-                        color: etaMinutes === preset ? "#fff" : "#0d6efd",
-                        border: "1px solid #cfe0f5",
-                      }}
-                      onClick={() => setEtaMinutes(preset)}
-                    >
-                      {preset} min
-                    </button>
-                  ))}
-                </div>
-                <input
-                  type="number"
-                  min="1"
-                  className="form-control marwat-input"
-                  value={etaMinutes}
-                  onChange={(e) => setEtaMinutes(Math.max(1, Number(e.target.value) || 1))}
-                />
-                <small className="text-muted">The customer's countdown timer will restart from this value when you save.</small>
-              </div>
-              <div className="modal-footer" style={{ borderTop: "1px solid #eef3f8" }}>
-                <button type="button" className="btn btn-outline-secondary px-4" onClick={() => setTrackingOrder(null)}>Cancel</button>
-                <button type="button" className="btn btn-primary px-4" disabled={savingTrack} onClick={saveTracking}>
-                  {savingTrack ? "Saving..." : "Save Tracking Info"}
-                </button>
               </div>
             </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );

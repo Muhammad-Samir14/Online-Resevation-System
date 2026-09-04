@@ -1,27 +1,39 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "../supabaseClient";
 import logo from "../assets/logo.png";
-
-const ADMIN_EMAIL = "iayankhan5616@gmail.com";
-const ADMIN_PASSWORD = "03489334Pro@";
 
 function AdminLoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setLoading(true);
 
-    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-      localStorage.setItem(
-        "admin",
-        JSON.stringify({ role: "admin", email: ADMIN_EMAIL })
-      );
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      const role = data.user?.app_metadata?.role;
+      if (role !== "admin") {
+        await supabase.auth.signOut();
+        throw new Error("Access denied. Admin authorization required.");
+      }
+
       navigate("/admin");
-    } else {
-      setError("Invalid admin credentials.");
+    } catch (err) {
+      setError(err.message || "Invalid admin credentials.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -72,9 +84,7 @@ function AdminLoginPage() {
 
           <form onSubmit={handleSubmit}>
             <div className="mb-3">
-              <label className="form-label fw-semibold">
-                Admin Email
-              </label>
+              <label className="form-label fw-semibold">Admin Email</label>
 
               <div className="input-group">
                 <span className="input-group-text bg-white">
@@ -93,9 +103,7 @@ function AdminLoginPage() {
             </div>
 
             <div className="mb-3">
-              <label className="form-label fw-semibold">
-                Password
-              </label>
+              <label className="form-label fw-semibold">Password</label>
 
               <div className="input-group">
                 <span className="input-group-text bg-white">
@@ -122,9 +130,19 @@ function AdminLoginPage() {
             <button
               type="submit"
               className="btn marwat-primary-btn w-100 py-3 mt-2"
+              disabled={loading}
             >
-              <i className="bi bi-shield-lock-fill me-2"></i>
-              Access Admin Panel
+              {loading ? (
+                <>
+                  <span className="spinner-border spinner-border-sm me-2"></span>
+                  Authenticating...
+                </>
+              ) : (
+                <>
+                  <i className="bi bi-shield-lock-fill me-2"></i>
+                  Access Admin Panel
+                </>
+              )}
             </button>
           </form>
         </div>
