@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "./supabaseClient";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
@@ -28,6 +28,9 @@ const DARK_INPUT_STYLE = {
 
 function BookGasPage() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const [submitStatus, setSubmitStatus] = useState({ type: "", message: "" });
+  const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     orderType: "Domestic",
     fullName: "",
@@ -129,9 +132,17 @@ function BookGasPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
+      if (!user) {
+        setSubmitStatus({ type: "error", message: "Please log in to place an order." });
+        return;
+      }
+
+      setSubmitting(true);
+      setSubmitStatus({ type: "", message: "" });
+
       const { data, error } = await supabase.from("bookings").insert([
         {
-          user_id: user?.id || null,
+          user_id: user.id,
           order_type: formData.orderType,
           full_name: formData.fullName,
           email: formData.email,
@@ -153,16 +164,15 @@ function BookGasPage() {
           additional_notes: formData.additionalNotes,
           status: "Pending",
         },
-      ]);
+      ]).select();
 
       if (error) throw error;
 
-      // Call edge function to send admin email notification
+      const savedOrder = data?.[0];
+
       try {
-        const { supabaseUrl, supabaseAnonKey } = {
-          supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
-          supabaseAnonKey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-        };
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
         await fetch(`${supabaseUrl}/functions/v1/send-order-notification`, {
           method: "POST",
           headers: {
@@ -172,7 +182,7 @@ function BookGasPage() {
           },
           body: JSON.stringify({
             order: {
-              id: data?.[0]?.id,
+              id: savedOrder?.id,
               full_name: formData.fullName,
               email: formData.email,
               phone_number: formData.phoneNumber,
@@ -185,7 +195,7 @@ function BookGasPage() {
               street_address: formData.streetAddress,
               landmark: formData.landmark,
               delivery_time_slot: formData.deliveryTimeSlot,
-              created_at: new Date().toISOString(),
+              created_at: savedOrder?.created_at || new Date().toISOString(),
               status: "Pending",
             },
             adminEmail: "isamirkhan5616@gmail.com",
@@ -195,14 +205,15 @@ function BookGasPage() {
         console.error("Notification send failed:", notifErr);
       }
 
-      alert("Booking confirmed successfully!");
-      window.location.href = "/track-order";
+      setSubmitStatus({ type: "success", message: "Booking confirmed successfully! Redirecting to your orders..." });
+      setTimeout(() => navigate("/track-order"), 2000);
     } catch (error) {
-      console.error(error);
-      alert(
-        error.message ||
-          "Could not submit booking. Please try again."
-      );
+      setSubmitStatus({
+        type: "error",
+        message: error.message || "Could not submit booking. Please try again.",
+      });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -274,6 +285,17 @@ function BookGasPage() {
                 payment method.
               </p>
             </div>
+
+            {submitStatus.message && (
+              <div
+                className={`alert ${submitStatus.type === "success" ? "alert-success" : "alert-danger"} d-flex align-items-center`}
+                role="alert"
+                style={{ borderRadius: "12px" }}
+              >
+                <i className={`bi ${submitStatus.type === "success" ? "bi-check-circle-fill" : "bi-exclamation-circle-fill"} me-2`}></i>
+                {submitStatus.message}
+              </div>
+            )}
 
             <form onSubmit={handleSubmit}>
               <div className="row g-4">
@@ -850,9 +872,13 @@ function BookGasPage() {
                     <button
                       type="submit"
                       className="btn marwat-primary-btn w-100 py-3"
+                      disabled={submitting}
                     >
-                      <i className="bi bi-check-circle-fill me-2"></i>
-                      Confirm Booking
+                      {submitting ? (
+                        <><span className="spinner-border spinner-border-sm me-2"></span>Processing...</>
+                      ) : (
+                        <><i className="bi bi-check-circle-fill me-2"></i>Confirm Booking</>
+                      )}
                     </button>
                   </div>
                 </div>

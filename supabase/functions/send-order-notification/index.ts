@@ -109,7 +109,7 @@ Deno.serve(async (req) => {
           </table>
 
           <div style="margin-top: 30px; text-align: center;">
-            <a href="${supabaseUrl.replace(".supabase.co", "") === supabaseUrl ? supabaseUrl : ""}/admin" style="background: #0d6efd; color: #ffffff; padding: 12px 32px; border-radius: 10px; text-decoration: none; font-weight: bold; display: inline-block;">View Order in Admin Panel</a>
+            <a href="${supabaseUrl.replace(/\.supabase\.co.*$/, "")}/admin" style="background: #0d6efd; color: #ffffff; padding: 12px 32px; border-radius: 10px; text-decoration: none; font-weight: bold; display: inline-block;">View Order in Admin Panel</a>
           </div>
 
           <p style="color: #6c757d; font-size: 12px; text-align: center; margin-top: 20px;">

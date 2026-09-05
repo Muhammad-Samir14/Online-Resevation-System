@@ -8,6 +8,7 @@ function TrackOrderPage() {
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -27,7 +28,7 @@ function TrackOrderPage() {
         if (error) throw error;
         setOrders(data || []);
       } catch (err) {
-        console.error("Error fetching orders:", err);
+        setErrorMsg("Could not load your orders. Please try again later.");
       } finally {
         setLoading(false);
       }
@@ -58,6 +59,15 @@ function TrackOrderPage() {
       return (
         <div className="d-flex justify-content-center align-items-center py-5">
           <div className="spinner-border text-primary" role="status"></div>
+        </div>
+      );
+    }
+
+    if (errorMsg) {
+      return (
+        <div className="alert alert-danger text-center" style={{ borderRadius: "12px" }}>
+          <i className="bi bi-exclamation-circle-fill me-2"></i>
+          {errorMsg}
         </div>
       );
     }
