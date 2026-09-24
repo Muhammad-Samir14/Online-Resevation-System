@@ -1,13 +1,54 @@
+import React, { useState } from "react";
+import { supabase } from "./supabaseClient";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 
 function Contact() {
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const [formData, setFormData] = useState({
+    name: "",
+    phone: "",
+    email: "",
+    message: "",
+  });
+  const [submitStatus, setSubmitStatus] = useState({ type: "", message: "" });
+  const [submitting, setSubmitting] = useState(false);
 
-    alert(
-      "Contact form UI is ready. We will connect it to Supabase/backend next."
-    );
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitStatus({ type: "", message: "" });
+    setSubmitting(true);
+
+    try {
+      const { error } = await supabase.from("contact_messages").insert([
+        {
+          name: formData.name,
+          phone: formData.phone,
+          email: formData.email,
+          message: formData.message,
+          status: "New",
+        },
+      ]);
+
+      if (error) throw error;
+
+      setSubmitStatus({
+        type: "success",
+        message: "Your message has been sent! We'll get back to you soon.",
+      });
+      setFormData({ name: "", phone: "", email: "", message: "" });
+    } catch (err) {
+      setSubmitStatus({
+        type: "error",
+        message: "Could not send your message. Please try again later.",
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -65,6 +106,17 @@ function Contact() {
                     Send Us a Message
                   </h3>
 
+                  {submitStatus.message && (
+                    <div
+                      className={`alert ${submitStatus.type === "success" ? "alert-success" : "alert-danger"} d-flex align-items-center`}
+                      role="alert"
+                      style={{ borderRadius: "12px" }}
+                    >
+                      <i className={`bi ${submitStatus.type === "success" ? "bi-check-circle-fill" : "bi-exclamation-circle-fill"} me-2`}></i>
+                      {submitStatus.message}
+                    </div>
+                  )}
+
                   <form onSubmit={handleSubmit}>
                     <div className="row g-3">
                       <div className="col-md-6">
@@ -74,8 +126,11 @@ function Contact() {
 
                         <input
                           type="text"
+                          name="name"
                           className="form-control marwat-input"
                           placeholder="Your name"
+                          value={formData.name}
+                          onChange={handleChange}
                           required
                         />
                       </div>
@@ -87,8 +142,11 @@ function Contact() {
 
                         <input
                           type="tel"
+                          name="phone"
                           className="form-control marwat-input"
                           placeholder="03XX XXXXXXX"
+                          value={formData.phone}
+                          onChange={handleChange}
                           required
                         />
                       </div>
@@ -100,8 +158,11 @@ function Contact() {
 
                         <input
                           type="email"
+                          name="email"
                           className="form-control marwat-input"
                           placeholder="example@email.com"
+                          value={formData.email}
+                          onChange={handleChange}
                           required
                         />
                       </div>
@@ -113,8 +174,11 @@ function Contact() {
 
                         <textarea
                           rows="5"
-                          className="form-control"
+                          name="message"
+                          className="form-control marwat-input"
                           placeholder="How can we help you?"
+                          value={formData.message}
+                          onChange={handleChange}
                           required
                         ></textarea>
                       </div>
@@ -123,8 +187,13 @@ function Contact() {
                         <button
                           type="submit"
                           className="btn marwat-primary-btn px-5 py-3"
+                          disabled={submitting}
                         >
-                          Send Message
+                          {submitting ? (
+                            <><span className="spinner-border spinner-border-sm me-2"></span>Sending...</>
+                          ) : (
+                            <>Send Message</>
+                          )}
                         </button>
                       </div>
                     </div>

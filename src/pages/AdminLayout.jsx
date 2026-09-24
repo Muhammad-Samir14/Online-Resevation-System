@@ -6,6 +6,9 @@ import CustomersManagement from "./CustomersManagement";
 import DeliveryPersonnelManagement from "./DeliveryPersonnelManagement";
 import ProductManagement from "./ProductManagement";
 import OrdersManagement from "./OrdersManagement";
+import ContactMessages from "./ContactMessages";
+
+const ADMIN_EMAIL = "isamirkhan5616@gmail.com";
 
 function AdminLayout() {
   const [activePage, setActivePage] = useState("dashboard");
@@ -23,19 +26,34 @@ function AdminLayout() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        navigate("/admin-login");
+        navigate("/admin/login");
         return;
       }
-      const role = user.app_metadata?.role;
-      if (role !== "admin") {
+
+      // Check 1: email must match admin email
+      if (user.email !== ADMIN_EMAIL) {
         await supabase.auth.signOut();
-        navigate("/admin-login");
+        navigate("/admin/login");
         return;
       }
+
+      // Check 2: is_admin must be true in profiles table
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("is_admin")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (profileError || !profile || !profile.is_admin) {
+        await supabase.auth.signOut();
+        navigate("/admin/login");
+        return;
+      }
+
       setIsAdmin(true);
       setAdminEmail(user.email || "");
     } catch {
-      navigate("/admin-login");
+      navigate("/admin/login");
     } finally {
       setAuthChecked(true);
     }
@@ -45,7 +63,6 @@ function AdminLayout() {
     checkAuth();
   }, [checkAuth]);
 
-  // Load initial unread notifications (pending bookings created in last 24h)
   const loadInitialNotifications = useCallback(async () => {
     try {
       const { data } = await supabase
@@ -66,7 +83,6 @@ function AdminLayout() {
     if (isAdmin) loadInitialNotifications();
   }, [isAdmin, loadInitialNotifications]);
 
-  // Realtime subscription for new bookings
   useEffect(() => {
     if (!isAdmin) return;
 
@@ -77,13 +93,11 @@ function AdminLayout() {
         { event: "INSERT", schema: "public", table: "bookings" },
         (payload) => {
           const newOrder = payload.new;
-          // Add to notifications
           setNotifications((prev) => [
             { ...newOrder, read: false },
             ...prev,
           ]);
 
-          // Show toast
           if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
           setToast({
             id: newOrder.id,
@@ -94,7 +108,6 @@ function AdminLayout() {
           });
           toastTimerRef.current = setTimeout(() => setToast(null), 8000);
 
-          // Browser push notification
           if ("Notification" in window && Notification.permission === "granted") {
             try {
               const n = new Notification("New Order Received", {
@@ -120,14 +133,12 @@ function AdminLayout() {
     };
   }, [isAdmin]);
 
-  // Request notification permission on mount
   useEffect(() => {
     if (isAdmin && "Notification" in window && Notification.permission === "default") {
       Notification.requestPermission();
     }
   }, [isAdmin]);
 
-  // Register service worker for push notifications
   useEffect(() => {
     if (isAdmin && "serviceWorker" in navigator) {
       navigator.serviceWorker.register("/sw.js").catch(() => {});
@@ -136,7 +147,7 @@ function AdminLayout() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    navigate("/admin-login");
+    navigate("/admin/login");
   };
 
   const markAllRead = () => {
@@ -147,10 +158,11 @@ function AdminLayout() {
 
   const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: "bi-speedometer2" },
-    { id: "customers", label: "Customers", icon: "bi-people-fill" },
-    { id: "products", label: "Products / Stock", icon: "bi-box-seam" },
-    { id: "orders", label: "Orders", icon: "bi-clipboard-data" },
-    { id: "deliveries", label: "Deliveries", icon: "bi-truck" },
+    { id: "customers", label: "Manage Customers", icon: "bi-people-fill" },
+    { id: "products", label: "Product Management", icon: "bi-box-seam" },
+    { id: "orders", label: "Order Management", icon: "bi-clipboard-data" },
+    { id: "deliveries", label: "Delivery Management", icon: "bi-truck" },
+    { id: "messages", label: "Contact Messages", icon: "bi-envelope-fill" },
   ];
 
   const renderContent = () => {
@@ -159,6 +171,7 @@ function AdminLayout() {
       case "products": return <ProductManagement />;
       case "orders": return <OrdersManagement onNavigate={setActivePage} />;
       case "deliveries": return <DeliveryPersonnelManagement />;
+      case "messages": return <ContactMessages />;
       default: return <Dashboard onNavigate={setActivePage} />;
     }
   };
@@ -194,7 +207,7 @@ function AdminLayout() {
           padding: .75rem 1rem; border-radius: 10px; border: none;
           background: transparent; color: rgba(255,255,255,.5);
           font-weight: 500; width: 100%; text-align: left;
-          transition: all .2s ease; cursor: pointer; font-size: .95rem;
+          transition: all .2s ease; cursor: pointer; font-size: .9rem;
         }
         .nav-item-admin:hover { background: rgba(255,255,255,.06); color: rgba(255,255,255,.85); }
         .nav-item-admin.active {
@@ -285,6 +298,14 @@ function AdminLayout() {
               <i className="bi bi-person-circle me-1"></i>{adminEmail}
             </small>
           </div>
+          <button
+            onClick={() => navigate("/")}
+            className="nav-item-admin"
+            style={{ color: "#0dcaf0" }}
+          >
+            <i className="bi bi-house-door" style={{ fontSize: "1.1rem" }}></i>
+            <span>Exit to Home</span>
+          </button>
           <button
             onClick={handleLogout}
             className="nav-item-admin"

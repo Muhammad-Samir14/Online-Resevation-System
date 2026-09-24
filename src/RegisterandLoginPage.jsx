@@ -8,6 +8,8 @@ import { Link, useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 
+const ADMIN_EMAIL = "isamirkhan5616@gmail.com";
+
 const loginSchema = z.object({
   email: z.string().email("Enter a valid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
@@ -35,6 +37,10 @@ function RegisterandLoginPage() {
   const [regError, setRegError] = useState("");
   const [regSuccess, setRegSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotStatus, setForgotStatus] = useState({ type: "", message: "" });
+  const [forgotLoading, setForgotLoading] = useState(false);
   const navigate = useNavigate();
 
   const {
@@ -60,12 +66,15 @@ function RegisterandLoginPage() {
 
       if (error) throw error;
 
-      const role = authData.user?.app_metadata?.role;
-      if (role === "admin") {
-        navigate("/admin");
-      } else {
-        navigate("/shop");
+      // Check if this is the admin email — if so, sign them out and redirect to admin login
+      if (authData.user?.email === ADMIN_EMAIL) {
+        await supabase.auth.signOut();
+        setLoginError("Admin accounts must log in through the Admin Portal.");
+        setTimeout(() => navigate("/admin/login"), 1500);
+        return;
       }
+
+      navigate("/shop");
     } catch (err) {
       setLoginError(err.message || "Invalid email or password.");
     } finally {
@@ -92,10 +101,9 @@ function RegisterandLoginPage() {
       if (error) throw error;
 
       if (authData?.session) {
-        const role = authData.user?.app_metadata?.role;
-        navigate(role === "admin" ? "/admin" : "/shop");
+        navigate("/shop");
       } else if (authData?.user) {
-        setRegSuccess("Account created! Please check your email to confirm, then log in.");
+        setRegSuccess("Account created! You can now log in.");
         setActiveTab("login");
       } else {
         setRegSuccess("Account created successfully! You can now log in.");
@@ -105,6 +113,32 @@ function RegisterandLoginPage() {
       setRegError(err.message || "Registration failed. Please try again.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setForgotStatus({ type: "", message: "" });
+    setForgotLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(
+        forgotEmail,
+        {
+          redirectTo: `${window.location.origin}/reset-password`,
+        }
+      );
+      if (error) throw error;
+      setForgotStatus({
+        type: "success",
+        message: "Password reset link sent! Check your email inbox.",
+      });
+    } catch (err) {
+      setForgotStatus({
+        type: "error",
+        message: err.message || "Could not send reset email. Please try again.",
+      });
+    } finally {
+      setForgotLoading(false);
     }
   };
 
@@ -139,214 +173,289 @@ function RegisterandLoginPage() {
                 </div>
 
                 <div className="p-4 p-md-5">
-                  <div className="d-flex justify-content-center mb-4">
-                    <div
-                      className="d-flex p-1 w-100"
-                      style={{ background: "#eef3f8", borderRadius: "12px" }}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => { setActiveTab("login"); setLoginError(""); setRegError(""); setRegSuccess(""); }}
-                        className="btn flex-grow-1"
-                        style={{
-                          borderRadius: "9px",
-                          background: activeTab === "login" ? "#0d6efd" : "transparent",
-                          color: activeTab === "login" ? "#fff" : "#5d6877",
-                          fontWeight: 600,
-                        }}
-                      >
-                        Login
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => { setActiveTab("register"); setLoginError(""); setRegError(""); setRegSuccess(""); }}
-                        className="btn flex-grow-1"
-                        style={{
-                          borderRadius: "9px",
-                          background: activeTab === "register" ? "#0d6efd" : "transparent",
-                          color: activeTab === "register" ? "#fff" : "#5d6877",
-                          fontWeight: 600,
-                        }}
-                      >
-                        Register
-                      </button>
-                    </div>
-                  </div>
-
-                  {activeTab === "login" && (
-                    <form onSubmit={handleLoginSubmit(onLogin)}>
+                  {showForgotPassword ? (
+                    <div>
                       <div className="text-center mb-4">
-                        <span className="section-kicker">Welcome Back</span>
-                        <h2 className="section-title mb-1">Login to Your Account</h2>
-                        <p className="text-muted">Access your bookings and account.</p>
+                        <span className="section-kicker">Password Recovery</span>
+                        <h2 className="section-title mb-1">Forgot Password?</h2>
+                        <p className="text-muted">Enter your email and we'll send you a reset link.</p>
                       </div>
 
-                      {loginError && (
-                        <div className="alert alert-danger small py-2 mb-3" role="alert">
-                          {loginError}
-                        </div>
-                      )}
-
-                      <div className="mb-3">
-                        <label className="form-label fw-semibold">Email Address</label>
-                        <div className="input-group">
-                          <span className="input-group-text bg-white">
-                            <i className="bi bi-envelope"></i>
-                          </span>
-                          <input
-                            type="email"
-                            className={`form-control marwat-input ${loginErrors.email ? "is-invalid" : ""}`}
-                            placeholder="example@email.com"
-                            {...loginRegister("email")}
-                          />
-                        </div>
-                        {loginErrors.email && (
-                          <div className="text-danger small mt-1">{loginErrors.email.message}</div>
-                        )}
-                      </div>
-
-                      <div className="mb-3">
-                        <label className="form-label fw-semibold">Password</label>
-                        <div className="input-group">
-                          <span className="input-group-text bg-white">
-                            <i className="bi bi-lock"></i>
-                          </span>
-                          <input
-                            type="password"
-                            className={`form-control marwat-input ${loginErrors.password ? "is-invalid" : ""}`}
-                            placeholder="Enter password"
-                            {...loginRegister("password")}
-                          />
-                        </div>
-                        {loginErrors.password && (
-                          <div className="text-danger small mt-1">{loginErrors.password.message}</div>
-                        )}
-                      </div>
-
-                      <button
-                        type="submit"
-                        className="btn marwat-primary-btn w-100 py-3"
-                        disabled={loading}
-                      >
-                        {loading ? (
-                          <><span className="spinner-border spinner-border-sm me-2"></span>Signing in...</>
-                        ) : (
-                          <>Login <i className="bi bi-arrow-right ms-2"></i></>
-                        )}
-                      </button>
-
-                      <p className="text-center mt-4 mb-0">
-                        Don't have an account?{" "}
-                        <button
-                          type="button"
-                          className="btn btn-link p-0 fw-bold text-decoration-none"
-                          onClick={() => { setActiveTab("register"); setLoginError(""); }}
+                      {forgotStatus.message && (
+                        <div
+                          className={`alert ${forgotStatus.type === "success" ? "alert-success" : "alert-danger"} small py-2 mb-3`}
+                          role="alert"
                         >
-                          Register
-                        </button>
-                      </p>
-                    </form>
-                  )}
-
-                  {activeTab === "register" && (
-                    <form onSubmit={handleRegSubmit(onRegister)}>
-                      <div className="text-center mb-4">
-                        <span className="section-kicker">Create Account</span>
-                        <h2 className="section-title mb-1">Register with Marwat Gas</h2>
-                        <p className="text-muted">Create your account for faster future bookings.</p>
-                      </div>
-
-                      {regError && (
-                        <div className="alert alert-danger small py-2 mb-3" role="alert">
-                          {regError}
-                        </div>
-                      )}
-                      {regSuccess && (
-                        <div className="alert alert-success small py-2 mb-3" role="alert">
-                          {regSuccess}
+                          {forgotStatus.message}
                         </div>
                       )}
 
-                      <div className="row g-3">
-                        <div className="col-12">
-                          <label className="form-label fw-semibold">Full Name</label>
-                          <input
-                            type="text"
-                            className={`form-control marwat-input ${regErrors.fullName ? "is-invalid" : ""}`}
-                            placeholder="Your full name"
-                            {...regRegister("fullName")}
-                          />
-                          <div className="invalid-feedback">{regErrors.fullName?.message}</div>
-                        </div>
-
-                        <div className="col-12">
-                          <label className="form-label fw-semibold">Phone Number</label>
-                          <input
-                            type="tel"
-                            className={`form-control marwat-input ${regErrors.phoneNumber ? "is-invalid" : ""}`}
-                            placeholder="03XX XXXXXXX"
-                            {...regRegister("phoneNumber")}
-                          />
-                          <div className="invalid-feedback">{regErrors.phoneNumber?.message}</div>
-                        </div>
-
-                        <div className="col-12">
+                      <form onSubmit={handleForgotPassword}>
+                        <div className="mb-3">
                           <label className="form-label fw-semibold">Email Address</label>
-                          <input
-                            type="email"
-                            className={`form-control marwat-input ${regErrors.email ? "is-invalid" : ""}`}
-                            placeholder="example@email.com"
-                            {...regRegister("email")}
-                          />
-                          <div className="invalid-feedback">{regErrors.email?.message}</div>
+                          <div className="input-group">
+                            <span className="input-group-text bg-white">
+                              <i className="bi bi-envelope"></i>
+                            </span>
+                            <input
+                              type="email"
+                              className="form-control marwat-input"
+                              placeholder="example@email.com"
+                              value={forgotEmail}
+                              onChange={(e) => setForgotEmail(e.target.value)}
+                              required
+                            />
+                          </div>
                         </div>
 
-                        <div className="col-md-6">
-                          <label className="form-label fw-semibold">Password</label>
-                          <input
-                            type="password"
-                            className={`form-control marwat-input ${regErrors.password ? "is-invalid" : ""}`}
-                            placeholder="Minimum 6 characters"
-                            {...regRegister("password")}
-                          />
-                          <div className="invalid-feedback">{regErrors.password?.message}</div>
-                        </div>
-
-                        <div className="col-md-6">
-                          <label className="form-label fw-semibold">Confirm Password</label>
-                          <input
-                            type="password"
-                            className={`form-control marwat-input ${regErrors.confirmPassword ? "is-invalid" : ""}`}
-                            placeholder="Repeat password"
-                            {...regRegister("confirmPassword")}
-                          />
-                          <div className="invalid-feedback">{regErrors.confirmPassword?.message}</div>
-                        </div>
-                      </div>
-
-                      <button
-                        type="submit"
-                        className="btn marwat-primary-btn w-100 py-3 mt-4"
-                        disabled={loading}
-                      >
-                        {loading ? (
-                          <><span className="spinner-border spinner-border-sm me-2"></span>Creating account...</>
-                        ) : (
-                          <>Create Account <i className="bi bi-person-plus ms-2"></i></>
-                        )}
-                      </button>
+                        <button
+                          type="submit"
+                          className="btn marwat-primary-btn w-100 py-3"
+                          disabled={forgotLoading}
+                        >
+                          {forgotLoading ? (
+                            <><span className="spinner-border spinner-border-sm me-2"></span>Sending...</>
+                          ) : (
+                            <><i className="bi bi-envelope-paper me-2"></i>Send Reset Link</>
+                          )}
+                        </button>
+                      </form>
 
                       <p className="text-center mt-4 mb-0">
-                        Already have an account?{" "}
                         <button
                           type="button"
                           className="btn btn-link p-0 fw-bold text-decoration-none"
-                          onClick={() => { setActiveTab("login"); setRegError(""); setRegSuccess(""); }}
+                          onClick={() => {
+                            setShowForgotPassword(false);
+                            setForgotStatus({ type: "", message: "" });
+                          }}
                         >
-                          Login
+                          Back to Login
                         </button>
                       </p>
-                    </form>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="d-flex justify-content-center mb-4">
+                        <div
+                          className="d-flex p-1 w-100"
+                          style={{ background: "#eef3f8", borderRadius: "12px" }}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => { setActiveTab("login"); setLoginError(""); setRegError(""); setRegSuccess(""); }}
+                            className="btn flex-grow-1"
+                            style={{
+                              borderRadius: "9px",
+                              background: activeTab === "login" ? "#0d6efd" : "transparent",
+                              color: activeTab === "login" ? "#fff" : "#5d6877",
+                              fontWeight: 600,
+                            }}
+                          >
+                            Login
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { setActiveTab("register"); setLoginError(""); setRegError(""); setRegSuccess(""); }}
+                            className="btn flex-grow-1"
+                            style={{
+                              borderRadius: "9px",
+                              background: activeTab === "register" ? "#0d6efd" : "transparent",
+                              color: activeTab === "register" ? "#fff" : "#5d6877",
+                              fontWeight: 600,
+                            }}
+                          >
+                            Register
+                          </button>
+                        </div>
+                      </div>
+
+                      {activeTab === "login" && (
+                        <form onSubmit={handleLoginSubmit(onLogin)}>
+                          <div className="text-center mb-4">
+                            <span className="section-kicker">Welcome Back</span>
+                            <h2 className="section-title mb-1">Login to Your Account</h2>
+                            <p className="text-muted">Access your bookings and account.</p>
+                          </div>
+
+                          {loginError && (
+                            <div className="alert alert-danger small py-2 mb-3" role="alert">
+                              {loginError}
+                            </div>
+                          )}
+
+                          <div className="mb-3">
+                            <label className="form-label fw-semibold">Email Address</label>
+                            <div className="input-group">
+                              <span className="input-group-text bg-white">
+                                <i className="bi bi-envelope"></i>
+                              </span>
+                              <input
+                                type="email"
+                                className={`form-control marwat-input ${loginErrors.email ? "is-invalid" : ""}`}
+                                placeholder="example@email.com"
+                                {...loginRegister("email")}
+                              />
+                            </div>
+                            {loginErrors.email && (
+                              <div className="text-danger small mt-1">{loginErrors.email.message}</div>
+                            )}
+                          </div>
+
+                          <div className="mb-2">
+                            <label className="form-label fw-semibold">Password</label>
+                            <div className="input-group">
+                              <span className="input-group-text bg-white">
+                                <i className="bi bi-lock"></i>
+                              </span>
+                              <input
+                                type="password"
+                                className={`form-control marwat-input ${loginErrors.password ? "is-invalid" : ""}`}
+                                placeholder="Enter password"
+                                {...loginRegister("password")}
+                              />
+                            </div>
+                            {loginErrors.password && (
+                              <div className="text-danger small mt-1">{loginErrors.password.message}</div>
+                            )}
+                          </div>
+
+                          <div className="text-end mb-3">
+                            <button
+                              type="button"
+                              className="btn btn-link p-0 text-decoration-none small fw-semibold"
+                              onClick={() => setShowForgotPassword(true)}
+                            >
+                              Forgot Password?
+                            </button>
+                          </div>
+
+                          <button
+                            type="submit"
+                            className="btn marwat-primary-btn w-100 py-3"
+                            disabled={loading}
+                          >
+                            {loading ? (
+                              <><span className="spinner-border spinner-border-sm me-2"></span>Signing in...</>
+                            ) : (
+                              <>Login <i className="bi bi-arrow-right ms-2"></i></>
+                            )}
+                          </button>
+
+                          <p className="text-center mt-4 mb-0">
+                            Don't have an account?{" "}
+                            <button
+                              type="button"
+                              className="btn btn-link p-0 fw-bold text-decoration-none"
+                              onClick={() => { setActiveTab("register"); setLoginError(""); }}
+                            >
+                              Register
+                            </button>
+                          </p>
+                        </form>
+                      )}
+
+                      {activeTab === "register" && (
+                        <form onSubmit={handleRegSubmit(onRegister)}>
+                          <div className="text-center mb-4">
+                            <span className="section-kicker">Create Account</span>
+                            <h2 className="section-title mb-1">Register with Marwat Gas</h2>
+                            <p className="text-muted">Create your account for faster future bookings.</p>
+                          </div>
+
+                          {regError && (
+                            <div className="alert alert-danger small py-2 mb-3" role="alert">
+                              {regError}
+                            </div>
+                          )}
+                          {regSuccess && (
+                            <div className="alert alert-success small py-2 mb-3" role="alert">
+                              {regSuccess}
+                            </div>
+                          )}
+
+                          <div className="row g-3">
+                            <div className="col-12">
+                              <label className="form-label fw-semibold">Full Name</label>
+                              <input
+                                type="text"
+                                className={`form-control marwat-input ${regErrors.fullName ? "is-invalid" : ""}`}
+                                placeholder="Your full name"
+                                {...regRegister("fullName")}
+                              />
+                              <div className="invalid-feedback">{regErrors.fullName?.message}</div>
+                            </div>
+
+                            <div className="col-12">
+                              <label className="form-label fw-semibold">Phone Number</label>
+                              <input
+                                type="tel"
+                                className={`form-control marwat-input ${regErrors.phoneNumber ? "is-invalid" : ""}`}
+                                placeholder="03XX XXXXXXX"
+                                {...regRegister("phoneNumber")}
+                              />
+                              <div className="invalid-feedback">{regErrors.phoneNumber?.message}</div>
+                            </div>
+
+                            <div className="col-12">
+                              <label className="form-label fw-semibold">Email Address</label>
+                              <input
+                                type="email"
+                                className={`form-control marwat-input ${regErrors.email ? "is-invalid" : ""}`}
+                                placeholder="example@email.com"
+                                {...regRegister("email")}
+                              />
+                              <div className="invalid-feedback">{regErrors.email?.message}</div>
+                            </div>
+
+                            <div className="col-md-6">
+                              <label className="form-label fw-semibold">Password</label>
+                              <input
+                                type="password"
+                                className={`form-control marwat-input ${regErrors.password ? "is-invalid" : ""}`}
+                                placeholder="Minimum 6 characters"
+                                {...regRegister("password")}
+                              />
+                              <div className="invalid-feedback">{regErrors.password?.message}</div>
+                            </div>
+
+                            <div className="col-md-6">
+                              <label className="form-label fw-semibold">Confirm Password</label>
+                              <input
+                                type="password"
+                                className={`form-control marwat-input ${regErrors.confirmPassword ? "is-invalid" : ""}`}
+                                placeholder="Repeat password"
+                                {...regRegister("confirmPassword")}
+                              />
+                              <div className="invalid-feedback">{regErrors.confirmPassword?.message}</div>
+                            </div>
+                          </div>
+
+                          <button
+                            type="submit"
+                            className="btn marwat-primary-btn w-100 py-3 mt-4"
+                            disabled={loading}
+                          >
+                            {loading ? (
+                              <><span className="spinner-border spinner-border-sm me-2"></span>Creating account...</>
+                            ) : (
+                              <>Create Account <i className="bi bi-person-plus ms-2"></i></>
+                            )}
+                          </button>
+
+                          <p className="text-center mt-4 mb-0">
+                            Already have an account?{" "}
+                            <button
+                              type="button"
+                              className="btn btn-link p-0 fw-bold text-decoration-none"
+                              onClick={() => { setActiveTab("login"); setRegError(""); setRegSuccess(""); }}
+                            >
+                              Login
+                            </button>
+                          </p>
+                        </form>
+                      )}
+                    </>
                   )}
 
                   <div className="text-center mt-4">

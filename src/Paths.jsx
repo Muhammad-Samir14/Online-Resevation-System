@@ -4,6 +4,7 @@ import LandingPage from "./LandingPage";
 import RegisterandLoginPage from "./RegisterandLoginPage";
 import AdminLayout from "./pages/AdminLayout";
 import AdminLoginPage from "./pages/AdminLoginPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 
 import ShopPage from "./ShopPage";
 import ShopNow from "./ShopNow";
@@ -64,12 +65,20 @@ const route = createBrowserRouter([
     element: <TrackOrderPage />,
   },
   {
+    path: "/admin/login",
+    element: <AdminLoginPage />,
+  },
+  {
     path: "/admin-login",
     element: <AdminLoginPage />,
   },
   {
     path: "/admin",
     element: <AdminLayout />,
+  },
+  {
+    path: "/reset-password",
+    element: <ResetPasswordPage />,
   },
 ]);
 

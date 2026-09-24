@@ -5,14 +5,17 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error(
-    "Supabase env vars missing. VITE_SUPABASE_URL:",
-    supabaseUrl,
-    "VITE_SUPABASE_ANON_KEY:",
-    supabaseAnonKey ? "[set]" : "[missing]"
+    "Supabase environment variables are missing. Check that VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set in your .env file."
   );
 }
 
 export const supabase = createClient(
   supabaseUrl || "https://placeholder.supabase.co",
-  supabaseAnonKey || "placeholder-anon-key"
+  supabaseAnonKey || "placeholder-anon-key",
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+    },
+  }
 );
